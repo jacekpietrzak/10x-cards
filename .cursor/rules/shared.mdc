@@ -1,0 +1,50 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# AI Rules for 10xCards
+
+10xCards is a web application that enables the automatic generation of flashcards using artificial intelligence. The aim of the project is to significantly speed up and simplify the process of creating fishes, enabling users to quickly transform the text they enter (copy-paste) into high-quality flashcards for learning. 
+
+## Tech Stack
+
+- NextJs 15
+- TypeScript 5
+- React 19
+- Tailwind 4
+- Shadcn/ui
+
+## Project Structure
+
+When introducing changes to the project, always follow the directory structure below:
+
+- `./public` - Static assets (favicon, robots.txt, etc.)
+- `./src` - Source code
+- `./src/app` - Next.js App Router pages and layouts
+- `./src/components` - Reusable React components
+- `./src/components/ui` - shadcn/ui components
+- `./src/lib` - Utility functions and libraries
+- `./src/hooks` - Custom React hooks
+- `./src/styles` - Global CSS (Tailwind, globals.css)
+- `./src/assets` - Static internal assets (images, icons, fonts)
+- `./src/types` - TypeScript types and interfaces
+- `./src/pages` - Optional Pages Router (legacy)
+- `./src/pages/api` - API routes
+
+When modifying the directory structure, always update this section.
+
+## Coding practices
+
+### Guidelines for clean code
+
+- Prioritize error handling and edge cases
+- Handle errors and edge cases at the beginning of functions.
+- Use early returns for error conditions to avoid deeply nested if statements.
+- Place the happy path last in the function for improved readability.
+- Avoid unnecessary else statements; use if-return pattern instead.
+- Use guard clauses to handle preconditions and invalid states early.
+- Implement proper error logging and user-friendly error messages.
+
+
+- Consider using custom error types or error factories for consistent error handling.

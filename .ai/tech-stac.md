@@ -2,27 +2,27 @@
 
 Frontend - NextJs:
 
-- NextJs jako framework dla budowania aplikacji webowych
-- React 19 zapewni interaktywność tam, gdzie jest potrzebna
-- TypeScript 5 dla statycznego typowania kodu i lepszego wsparcia IDE
-- Tailwind 4 pozwala na wygodne stylowanie aplikacji
-- DaisyUi 5 zapewnia bibliotekę dostępnych komponentów React, na których oprzemy UI
+- NextJs as a framework for building web applications
+- React 19 provides interactivity where needed
+- TypeScript 5 for static typing and better IDE support
+- Tailwind 4 allows for convenient application styling
+- Shadcn/ui provides a library of accessible React components for UI
 
-Backend - Supabase jako kompleksowe rozwiązanie backendowe:
+Backend - Supabase as a comprehensive backend solution:
 
-- Zapewnia bazę danych PostgreSQL
-- Zapewnia SDK w wielu językach, które posłużą jako Backend-as-a-Service
-- Jest rozwiązaniem open source, które można hostować lokalnie lub na własnym serwerze
-- Posiada wbudowaną autentykację użytkowników
+- Provides PostgreSQL database
+- Offers SDK in multiple languages, serving as Backend-as-a-Service
+- Is an open source solution that can be hosted locally or on your own server
+- Has built-in user authentication
 
-AI - Komunikacja z modelami przez usługę Openrouter.ai:
+AI - Communication with models through Openrouter.ai:
 
-- Dostęp do szerokiej gamy modeli (OpenAI, Anthropic, Google i wiele innych), które pozwolą nam znaleźć rozwiązanie zapewniające wysoką efektywność i niskie koszta
-- Pozwala na ustawianie limitów finansowych na klucze API
+- Access to a wide range of models (OpenAI, Anthropic, Google and many others) that allow us to find a solution providing high efficiency and low costs
+- Allows setting financial limits on API keys
 
-CI/CD i Hosting:
+CI/CD and Hosting:
 
-- Github Actions do tworzenia pipeline’ów CI/CD
-- Vercel do hostowania aplikacji
+- Github Actions for creating CI/CD pipelines
+- Vercel for application hosting
 
 </tech-stack>
