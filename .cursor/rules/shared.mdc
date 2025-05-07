@@ -28,9 +28,9 @@ When introducing changes to the project, always follow the directory structure b
 - `./src/hooks` - Custom React hooks
 - `./src/styles` - Global CSS (Tailwind, globals.css)
 - `./src/assets` - Static internal assets (images, icons, fonts)
-- `./src/types` - TypeScript types and interfaces
-- `./src/pages` - Optional Pages Router (legacy)
-- `./src/pages/api` - API routes
+- `./src/lib/types` - TypeScript types and interfaces
+- `./src/app/` - Optional Pages Router (legacy)
+- `./src/app/api` - API routes
 
 When modifying the directory structure, always update this section.
 
