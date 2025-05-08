@@ -47,22 +47,10 @@ Endpoint umożliwia tworzenie jednej lub wielu fiszek (ręcznie lub na podstawie
 - Body:
   ```json
   {
-    "flashcards": [
-      {
-        "id": 1,
-        "front": "Question 1",
-        "back": "Answer 1",
-        "source": "manual",
-        "generation_id": null
-      },
-      {
-        "id": 2,
-        "front": "Question 2",
-        "back": "Answer 2",
-        "source": "ai-full",
-        "generation_id": 123
-      }
-    ]
+  "flashcards": [
+    { "id": <number>, "front": "<string>", "back": "<string>", "source": "<string>", "generation_id": <number | null> },
+    ...
+  ]
   }
   ```
 
