@@ -29,6 +29,7 @@ When introducing changes to the project, always follow the directory structure b
 - `./src/styles` - Global CSS (Tailwind, globals.css)
 - `./src/assets` - Static internal assets (images, icons, fonts)
 - `./src/lib/types` - TypeScript types and interfaces
+- `./src/lib/services/` - Services folder
 - `./src/app/` - Optional Pages Router (legacy)
 - `./src/app/api` - API routes
 
