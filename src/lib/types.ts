@@ -93,9 +93,10 @@ export interface GenerateFlashcardsCommand {
 //    Represents a single flashcard proposal generated from AI, always with source "ai-full".
 // ------------------------------------------------------------------------------------------------
 export interface FlashcardProposalDto {
+    id: string;
     front: string;
     back: string;
-    source: "ai-full";
+    source: "ai-full" | "ai-edited";
 }
 
 // ------------------------------------------------------------------------------------------------
