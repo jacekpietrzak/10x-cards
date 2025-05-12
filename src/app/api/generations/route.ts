@@ -1,11 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient, DEFAULT_USER_ID } from "@/utils/supabase/server";
-import {
-    GenerateFlashcardsCommand,
-    GenerationCreateResponseDto,
-} from "@/lib/types";
-import { generateFlashcards } from "@/lib/generation.service";
+import { GenerateFlashcardsCommand } from "@/lib/types";
+import { generateFlashcards } from "@/lib/services/generation.service";
 
 // Validation schema for the request body
 const generateFlashcardsSchema = z.object({
