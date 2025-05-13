@@ -1,11 +1,11 @@
-import type { Database } from "../db/database.types";
+import type { Database } from "@/db/database.types";
 import { SupabaseClient } from "@supabase/supabase-js";
 import crypto from "crypto";
 import {
     FlashcardProposalDto,
     GenerateFlashcardsCommand,
     GenerationCreateResponseDto,
-} from "./types";
+} from "@/lib/types";
 
 // Mock AI service for development - to be replaced with actual AI service
 async function callAIService(text: string): Promise<FlashcardProposalDto[]> {
