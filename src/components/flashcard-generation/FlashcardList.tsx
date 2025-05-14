@@ -19,7 +19,7 @@ export function FlashcardList({
   }
 
   return (
-    <div className="space-y-4 mt-8">
+    <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {flashcards.map((flashcard) => (
         <FlashcardListItem
           key={flashcard.id}

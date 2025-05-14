@@ -6,36 +6,66 @@ import {
     GenerateFlashcardsCommand,
     GenerationCreateResponseDto,
 } from "@/lib/types";
+import { OpenRouterService } from "./openrouter.service";
 
-// Mock AI service for development - to be replaced with actual AI service
+const SYSTEM_MESSAGE =
+    `You are a flashcard generation assistant. Your task is to create high-quality flashcards from the provided text.
+Each flashcard should follow these rules:
+1. Front side should be a clear, concise question (max 200 characters)
+2. Back side should contain a comprehensive answer (max 500 characters)
+3. Focus on key concepts, definitions, and relationships
+4. Avoid overly simple or trivial content
+5. Ensure questions are specific and unambiguous
+6. Answers should be complete and self-contained
+
+Generate between 3-7 flashcards depending on the text length and complexity.
+Format your response as a JSON array of flashcard objects with "front" and "back" properties.`;
+
+const openRouter = new OpenRouterService({
+    apiKey: process.env.OPENROUTER_API_KEY || "",
+    defaultModel: "openai/gpt-4o-mini",
+});
+
 async function callAIService(text: string): Promise<FlashcardProposalDto[]> {
-    // This is a mock implementation that will be replaced with the actual AI service
-    // For now, we just create some dummy flashcards based on the text
-    console.log("Calling mock AI service with text length:", text.length);
-
-    // Create a deterministic but random-looking set of flashcard proposals
-    const words = text.split(/\s+/).filter((w) => w.length > 3);
-
-    // Generate between 3-7 flashcards
-    const count = Math.min(5, Math.max(3, Math.floor(words.length / 200)));
-
-    const proposals: FlashcardProposalDto[] = [];
-
-    for (let i = 0; i < count; i++) {
-        const randomIndex = (i * 19) % Math.max(1, words.length - 10);
-        const front = `What is the meaning of "${words[randomIndex]}"?`;
-        const back = `The term "${words[randomIndex]}" refers to ${
-            words.slice(randomIndex + 1, randomIndex + 8).join(" ")
-        }...`;
-
-        proposals.push({
-            front,
-            back,
-            source: "ai-full",
+    try {
+        openRouter.setSystemMessage(SYSTEM_MESSAGE);
+        openRouter.setResponseFormat({
+            name: "flashcards",
+            schema: {
+                type: "object",
+                properties: {
+                    flashcards: {
+                        type: "array",
+                        items: {
+                            type: "object",
+                            properties: {
+                                front: { type: "string" },
+                                back: { type: "string" },
+                            },
+                            required: ["front", "back"],
+                        },
+                    },
+                },
+                required: ["flashcards"],
+            },
         });
-    }
 
-    return proposals;
+        const aiResponse = await openRouter.sendChatMessage<{
+            flashcards: Array<{ front: string; back: string }>;
+        }>(text);
+        const response = aiResponse.flashcards;
+
+        console.log("Call AI response", aiResponse);
+
+        return response.map((card) => ({
+            front: card.front,
+            back: card.back,
+            source: "ai-full" as const,
+        }));
+    } catch (error) {
+        console.error("Error calling AI service:", error);
+        throw new Error("Failed to generate flashcards");
+    }
 }
 
 /**
@@ -73,7 +103,7 @@ export async function generateFlashcards(
                 user_id: userId,
                 source_text_hash: sourceTextHash,
                 source_text_length: command.source_text.length,
-                model: "mock-development-model", // To be replaced with actual AI model
+                model: "openai/gpt-4o-mini",
                 generated_count: flashcardProposals.length,
                 generation_duration: generationDuration,
             })
@@ -91,7 +121,7 @@ export async function generateFlashcards(
                     user_id: userId,
                     error_code: "DB_INSERT_ERROR",
                     error_message: generationError.message,
-                    model: "mock-development-model",
+                    model: "openai/gpt-4o-mini",
                     source_text_hash: sourceTextHash,
                     source_text_length: command.source_text.length,
                 });
@@ -125,7 +155,7 @@ export async function generateFlashcards(
                     user_id: userId,
                     error_code: "AI_SERVICE_ERROR",
                     error_message: error.message,
-                    model: "mock-development-model",
+                    model: "openai/gpt-4o-mini",
                     source_text_hash: sourceTextHash,
                     source_text_length: command.source_text.length,
                 });

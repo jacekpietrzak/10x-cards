@@ -43,9 +43,9 @@ export function FlashcardListItem({
 
   return (
     <Card>
-      <CardContent>
+      <CardContent className="flex flex-col justify-between h-full">
         {isEditing ? (
-          <div className="space-y-4">
+          <div className="flex flex-col gap-4">
             <div>
               <div className="font-medium text-sm text-muted-foreground mb-1">
                 Front
@@ -85,7 +85,7 @@ export function FlashcardListItem({
           </div>
         ) : (
           <>
-            <div className="space-y-4">
+            <div className="flex flex-col gap-4">
               <div>
                 <div className="font-medium text-sm text-muted-foreground mb-1">
                   Front
