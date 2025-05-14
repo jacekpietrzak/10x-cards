@@ -73,9 +73,16 @@ Tytuł: Logowanie do aplikacji
 Opis: Jako zarejestrowany użytkownik chcę móc się zalogować, aby mieć dostęp do moich fiszek i historii generowania.
 Kryteria akceptacji:
 
+- Logowanie wymaga podania adresu email i hasła.
+- Rejestracja wymaga podania adresu email, hasła i potwierdzenia hasła.
 - Po podaniu prawidłowych danych logowania użytkownik zostaje przekierowany do widoku generowania fiszek.
 - Błędne dane logowania wyświetlają komunikat o nieprawidłowych danych.
 - Dane dotyczące logowania przechowywane są w bezpieczny sposób.
+- Użytkownik nie może korzystać z aplikacji bez logowania sie do systemu.
+- Użytkownik może się logować do systemu poprzez przycisk w prawym górnym rogu.
+- Użytkownik może się wylogować z systemu poprzez przycisk w prawym górnym rogu.
+- Logowanie i rejestracja odbywają się na dedykowanych stronach.
+- Odzyskiwanie hasła powinno być możliwe.
 
 ID: US-003
 Tytuł: Generowanie fiszek przy użyciu AI

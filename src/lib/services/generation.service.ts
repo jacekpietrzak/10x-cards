@@ -18,7 +18,7 @@ Each flashcard should follow these rules:
 5. Ensure questions are specific and unambiguous
 6. Answers should be complete and self-contained
 
-Generate between 3-7 flashcards depending on the text length and complexity.
+Generate between 3-7 flashcards depending on the text length and complexity. Return in the same language as the provided text.
 Format your response as a JSON array of flashcard objects with "front" and "back" properties.`;
 
 const openRouter = new OpenRouterService({
