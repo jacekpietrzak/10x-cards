@@ -1,0 +1,295 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Supabase Auth Integration with Next.js
+
+Use this guide to introduce authentication (sign-up & sign-in) in Next.js applications (App Router, v15) with server-side rendering (SSR).
+
+## Before we start
+
+VERY IMPORTANT: Ask me which pages or components should behave differently after introducing authentication. Adjust further steps accordingly.
+
+## Core Requirements
+
+1. Use `@supabase/ssr` (NOT `@supabase/auth-helpers-nextjs`)  
+2. Use ONLY `getAll` and `setAll` for cookie management  
+3. NEVER use individual `get`, `set`, or `remove` cookie methods  
+4. Implement proper session management via Next.js middleware and App Router conventions  
+5. Follow Next.js file-structure (`src/app`, `src/lib`, `src/hooks`)
+
+## Installation
+
+```bash
+npm install @supabase/ssr @supabase/supabase-js
+```
+
+## Environment Variables
+
+Create `.env.local`:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=your_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+```
+
+Add TypeScript support in `src/lib/types/env.d.ts`:
+
+```typescript
+declare global {
+  namespace NodeJS {
+    interface ProcessEnv {
+      NEXT_PUBLIC_SUPABASE_URL: string;
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: string;
+    }
+  }
+}
+export {};
+```
+
+Update `.env.example` accordingly.
+
+## Implementation Steps
+
+### 1. Browser-side Client
+
+Update existing Supabase client or create one in `src/utils/supabase/client.ts`:
+
+```typescript
+import { createBrowserClient } from '@supabase/ssr';
+import type { Database } from '@/lib/types/database.types';
+
+export function createSupabaseClient() {
+  return createBrowserClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+}
+```
+
+### 2. Server-side Client
+
+Create `src/utils/supabase/server.ts`:
+
+```typescript
+import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
+import type { Database } from '@/lib/types/database.types';
+
+export async function createSupabaseServerClient() {
+  const cookieStore = await cookies();
+
+  return createServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            cookieStore.set(name, value, options)
+          );
+        },
+      },
+    }
+  );
+}
+```
+
+### 3. Middleware Protection
+
+Update existing auth middleware or create one in `src/middleware.ts`:
+
+```typescript
+import { createServerClient } from '@supabase/ssr';
+import { NextResponse, type NextRequest } from 'next/server';
+
+// Whitelist public routes & API
+const PUBLIC_PATHS = [
+  '/', '/about',
+  '/auth/login', '/auth/register', '/auth/reset-password', '/auth/callback',
+  '/api/auth/login', '/api/auth/register', '/api/auth/reset-password', '/api/auth/logout', '/api/auth/callback',
+];
+
+export async function middleware(request: NextRequest) {
+  let supabaseResponse = NextResponse.next({ request });
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value)
+          );
+          supabaseResponse = NextResponse.next({ request });
+          cookiesToSet.forEach(({ name, value, options }) =>
+            supabaseResponse.cookies.set(name, value, options)
+          );
+          return supabaseResponse;
+        },
+      },
+    }
+  );
+
+  // IMPORTANT: No code between createServerClient and getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const isPublic = PUBLIC_PATHS.some(path =>
+    request.nextUrl.pathname === path ||
+    request.nextUrl.pathname.startsWith(`${path}/`)
+  );
+
+  if (!user && !isPublic) {
+    const url = request.nextUrl.clone();
+    url.pathname = '/auth/login';
+    url.searchParams.set('redirectTo', request.nextUrl.pathname);
+    return NextResponse.redirect(url);
+  }
+
+  return supabaseResponse;
+}
+
+export const config = {
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+  ],
+};
+```
+
+### 4. API Routes
+
+Under `src/app/api/auth`, add:
+
+#### `login/route.ts`
+
+```typescript
+import { createSupabaseServerClient } from '@/lib/services/supabase/server';
+import { NextRequest, NextResponse } from 'next/server';
+
+export async function POST(request: NextRequest) {
+  const { email, password } = await request.json() ?? {};
+  if (!email || !password) {
+    return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });
+  }
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  return NextResponse.json({ user: data.user }, { status: 200 });
+}
+```
+
+#### `register/route.ts`
+
+```typescript
+// same pattern, using supabase.auth.signUp(...)
+```
+
+#### `logout/route.ts`
+
+```typescript
+// same pattern, using supabase.auth.signOut()
+```
+
+#### `callback/route.ts`
+
+```typescript
+// handle code exchange with supabase.auth.exchangeCodeForSession(...)
+```
+
+### 5. Client Hook
+
+`src/hooks/useAuth.ts`:
+
+```typescript
+'use client';
+import { createSupabaseClient } from '@/utils/supabase/client';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+
+export function useAuth() {
+  const supabase = createSupabaseClient();
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+
+  const signIn = async (email: string, password: string) => {
+    setLoading(true);
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    setLoading(false);
+    if (error) throw error;
+    router.refresh();
+    return data;
+  };
+
+  // signUp, signOut follow same pattern...
+  return { signIn, /* signUp, signOut */, loading };
+}
+```
+
+### 6. Protecting Pages
+
+**Server Component**:
+
+```typescript
+// src/app/protected/page.tsx
+import { createSupabaseServerClient } from '@/utils/supabase/server';
+import { redirect } from 'next/navigation';
+
+export default async function ProtectedPage() {
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect('/auth/login');
+  return <div>Welcome {user.email}</div>;
+}
+```
+
+**Client Component**:
+
+```typescript
+'use client';
+import { useEffect, useState } from 'react';
+import { createSupabaseClient } from '@/utils/supabase/client';
+import { useRouter } from 'next/navigation';
+import type { User } from '@supabase/supabase-js';
+
+export default function ProtectedClient() {
+  const supabase = createSupabaseClient();
+  const router = useRouter();
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return router.push('/auth/login');
+      setUser(user);
+    });
+  }, [supabase, router]);
+
+  if (!user) return <div>Loading...</div>;
+  return <div>Welcome {user.email}</div>;
+}
+```
+
+## Security Best Practices
+
+- Cookies are `httpOnly`, `secure`, `sameSite` (handled by `@supabase/ssr`).  
+- Never expose anon keys on the client beyond `NEXT_PUBLIC_*`.  
+- Validate all inputs server-side (API routes).  
+- Always return your `supabaseResponse` from middleware to preserve cookies.
+
+## Common Pitfalls
+
+1. DO NOT use `get`, `set`, or `remove` cookie methods.  
+2. DO NOT import from `@supabase/auth-helpers-nextjs`.  
+3. DO NOT skip `supabase.auth.getUser()` in middleware or pages.  
+4. DO NOT alter the cookie logic in your client/servers.  
+5. Always use `createSupabaseServerClient()` in server code & API.  
+6. Always use `createSupabaseClient()` in client code & hooks.
