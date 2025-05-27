@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -8,6 +8,8 @@ import { loginSchema, LoginInput } from "@/lib/schemas/auth";
 import { FormInput } from "@/components/ui/FormInput";
 import { FormButton } from "@/components/ui/FormButton";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 export function LoginForm() {
   const {
@@ -17,10 +19,31 @@ export function LoginForm() {
   } = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
   });
+  const [formError, setFormError] = useState<string | null>(null);
+  const router = useRouter();
 
   const onSubmit = async (data: LoginInput) => {
-    // TODO: Handle login submission
-    console.log("Login data:", data);
+    setFormError(null);
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      const result = await res.json();
+      if (!result.success) {
+        setFormError(result.error);
+        toast.error(result.error);
+        return;
+      }
+      toast.success("Zalogowano pomyślnie");
+      router.push("/generate");
+      router.refresh();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Coś poszło nie tak";
+      setFormError(message);
+      toast.error(message);
+    }
   };
 
   return (
@@ -29,6 +52,15 @@ export function LoginForm() {
         <CardTitle>Zaloguj się</CardTitle>
       </CardHeader>
       <CardContent>
+        {formError && (
+          <div
+            role="alert"
+            aria-live="polite"
+            className="mb-4 p-4 bg-destructive/15 text-destructive rounded-md"
+          >
+            {formError}
+          </div>
+        )}
         <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4">
           <FormInput
             id="email"

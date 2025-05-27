@@ -12,7 +12,7 @@ export default function AuthLayout({
 }) {
   return (
     <main className="flex min-h-screen items-center justify-center bg-background">
-      <div className="w-full max-w-md p-4">
+      <div className="w-full p-4">
         <div className="flex justify-center mb-6">
           <Link href="/" className="text-2xl font-bold">
             10xCards
