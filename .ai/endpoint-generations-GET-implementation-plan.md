@@ -52,6 +52,7 @@ Endpoint `GET /generations` umożliwia pobranie listy żądań generacji flashca
 - Autoryzacja: filtrowanie rekordów po `user_id` aby zwrócić jedynie dane bieżącego użytkownika.
 - Walidacja parametru `page` i `limit` (liczby całkowite, zakres minimalny i maksymalny) w celu zapobieżenia nadużyciom.
 - Ochrona przed SQL Injection przez użycie Supabase SDK.
+- Rate limiting i CORS
 
 ## 6. Obsługa błędów
 
