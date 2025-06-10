@@ -5,6 +5,7 @@ import {
     FlashcardProposalDto,
     GenerateFlashcardsCommand,
     GenerationCreateResponseDto,
+    GenerationsListResponseDto,
 } from "@/lib/types";
 import { OpenRouterService } from "./openrouter.service";
 
@@ -161,6 +162,66 @@ export async function generateFlashcards(
                 });
         }
 
+        throw error; // Re-throw to be caught by API handler
+    }
+}
+
+/**
+ * Retrieves a paginated list of generations for a specific user
+ * @param userId The ID of the user whose generations to retrieve
+ * @param page Page number (1-based)
+ * @param limit Number of items per page
+ * @param supabase Supabase client for database operations
+ * @returns Paginated list of generations with metadata
+ */
+export async function listGenerations(
+    userId: string,
+    page: number,
+    limit: number,
+    supabase: SupabaseClient<Database>,
+): Promise<GenerationsListResponseDto> {
+    try {
+        // Calculate offset for pagination
+        const offset = (page - 1) * limit;
+
+        // Query generations with count for pagination
+        const { data, error, count } = await supabase
+            .from("generations")
+            .select(
+                `
+                id,
+                model,
+                generated_count,
+                accepted_unedited_count,
+                accepted_edited_count,
+                source_text_hash,
+                source_text_length,
+                generation_duration,
+                created_at,
+                updated_at
+            `,
+                { count: "exact" },
+            )
+            .eq("user_id", userId)
+            .order("created_at", { ascending: false })
+            .range(offset, offset + limit - 1);
+
+        if (error) {
+            console.error("Error fetching generations:", error);
+            throw new Error(`Failed to fetch generations: ${error.message}`);
+        }
+
+        // Return formatted response with pagination metadata
+        return {
+            data: data || [],
+            pagination: {
+                page,
+                limit,
+                total: count || 0,
+            },
+        };
+    } catch (error: unknown) {
+        console.error("Error in listGenerations:", error);
         throw error; // Re-throw to be caught by API handler
     }
 }

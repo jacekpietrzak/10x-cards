@@ -25,4 +25,4 @@ export async function createClient() {
     },
   );
 }
-export const DEFAULT_USER_ID = "1303f536-61e3-4fe6-a6ea-4be9a52292d7";
+export const DEFAULT_USER_ID = "753cd917-10b5-41b0-b25d-b8212b1222f7";

@@ -133,3 +133,31 @@ export type GenerationErrorLogDto = Pick<
     | "created_at"
     | "user_id"
 >;
+
+// ------------------------------------------------------------------------------------------------
+// 11. Generation DTO
+//     Represents generation metadata for the GET /generations endpoint (list view).
+//     Contains only the essential fields without the full detail.
+// ------------------------------------------------------------------------------------------------
+export type GenerationDto = Pick<
+    Generation,
+    | "id"
+    | "model"
+    | "generated_count"
+    | "accepted_unedited_count"
+    | "accepted_edited_count"
+    | "source_text_hash"
+    | "source_text_length"
+    | "generation_duration"
+    | "created_at"
+    | "updated_at"
+>;
+
+// ------------------------------------------------------------------------------------------------
+// 12. Generations List Response DTO
+//     Combines an array of generation metadata with pagination details (GET /generations).
+// ------------------------------------------------------------------------------------------------
+export interface GenerationsListResponseDto {
+    data: GenerationDto[];
+    pagination: PaginationDto;
+}
