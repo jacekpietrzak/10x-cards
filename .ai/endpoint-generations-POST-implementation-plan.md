@@ -61,7 +61,7 @@ Endpoint służy do inicjowania procesu generowania propozycji fiszek przez AI n
 
 1. Odbiór żądania POST z ciałem zawierającym `source_text`.
 2. Walidacja danych wejściowych za pomocą biblioteki `zod`, sprawdzającej, że długość `source_text` wynosi od 1000 do 10000 znaków.
-3. Wywołanie dedykowanego serwisu (np. `generation.service`), który:
+3. Wywołanie dedykowanego serwisu (`generation.service`), który:
    - Przekazuje `source_text` do zewnętrznego serwisu AI w celu wygenerowania propozycji fiszek.
    - Oblicza i zapisuje metadane generacji w tabeli `generations` (m.in. `model`, `generated_count`, `source_text_hash`, `source_text_length`, `generation_duration`).
 4. W przypadku wystąpienia błędu podczas wywołania AI, rejestrowanie błędu w tabeli `generation_error_logs` z odpowiednimi danymi (np. `error_code`, `error_message`, `model`).
