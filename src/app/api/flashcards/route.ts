@@ -4,6 +4,9 @@ import { createClient } from "@/utils/supabase/server";
 import { DEFAULT_USER_ID } from "@/utils/supabase/server";
 import { createFlashcards } from "@/lib/services/flashcards.service";
 import type { FlashcardsCreateCommand, Source } from "@/lib/types";
+import { flashcardsQueryParamsSchema } from "@/lib/schemas/flashcards";
+import { listFlashcards } from "@/lib/services/flashcards.service";
+import { NextRequest } from "next/server";
 
 // Validation functions
 const validateGenerationId = (
@@ -69,6 +72,64 @@ export async function POST(request: Request) {
         console.error("Error in POST /api/flashcards:", error);
         return NextResponse.json(
             { error: "An error occurred while creating flashcards." },
+            { status: 500 },
+        );
+    }
+}
+
+/**
+ * GET /api/flashcards
+ *
+ * Retrieves a paginated, sortable, and filterable list of flashcards
+ * for the current (development: default) user.
+ *
+ * Supported query parameters (all optional):
+ * - page (number, default 1)
+ * - limit (number, default 10, max 100)
+ * - sort (string, default "created_at")
+ * - order ("asc" | "desc", default "asc")
+ * - source ("ai-full" | "ai-edited" | "manual")
+ * - generation_id (number)
+ */
+export async function GET(request: NextRequest) {
+    try {
+        // Extract and validate query parameters
+        const { searchParams } = new URL(request.url);
+        const rawParams = Object.fromEntries(searchParams.entries());
+        const parsed = flashcardsQueryParamsSchema.safeParse(rawParams);
+
+        if (!parsed.success) {
+            return NextResponse.json(
+                { error: parsed.error.errors.map((e) => e.message).join(", ") },
+                { status: 400 },
+            );
+        }
+
+        const params = parsed.data;
+
+        // Create Supabase server client
+        const supabase = await createClient();
+
+        // TODO: Production mode authentication
+        // const { data: { user }, error: authError } = await supabase.auth.getUser();
+        // if (authError || !user) {
+        //     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        // }
+
+        // DEVELOPMENT MODE: Using DEFAULT_USER_ID
+        const result = await listFlashcards(
+            DEFAULT_USER_ID,
+            params,
+            supabase,
+        );
+        // PRODUCTION MODE: Uncomment below and remove DEFAULT_USER_ID usage
+        // const result = await listFlashcards(user.id, params, supabase);
+
+        return NextResponse.json(result, { status: 200 });
+    } catch (err) {
+        console.error("Error fetching flashcards:", err);
+        return NextResponse.json(
+            { error: "Internal server error" },
             { status: 500 },
         );
     }
