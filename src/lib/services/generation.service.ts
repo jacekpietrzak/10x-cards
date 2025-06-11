@@ -5,6 +5,7 @@ import {
     FlashcardProposalDto,
     GenerateFlashcardsCommand,
     GenerationCreateResponseDto,
+    GenerationDetailDto,
     GenerationsListResponseDto,
 } from "@/lib/types";
 import { OpenRouterService } from "./openrouter.service";
@@ -222,6 +223,62 @@ export async function listGenerations(
         };
     } catch (error: unknown) {
         console.error("Error in listGenerations:", error);
+        throw error; // Re-throw to be caught by API handler
+    }
+}
+
+/**
+ * Retrieves a specific generation by ID for a user, including associated flashcards
+ * @param generationId The ID of the generation to retrieve
+ * @param userId The ID of the user who owns the generation
+ * @param supabase Supabase client for database operations
+ * @returns Generation detail with flashcards or null if not found
+ */
+export async function getGenerationById(
+    generationId: number,
+    userId: string,
+    supabase: SupabaseClient<Database>,
+): Promise<GenerationDetailDto | null> {
+    try {
+        // Query generation with associated flashcards
+        const { data, error } = await supabase
+            .from("generations")
+            .select(`
+                *,
+                flashcards (
+                    id,
+                    front,
+                    back,
+                    source,
+                    generation_id,
+                    created_at,
+                    updated_at
+                )
+            `)
+            .eq("id", generationId)
+            .eq("user_id", userId)
+            .single();
+
+        if (error) {
+            if (error.code === "PGRST116") {
+                // No results found - generation doesn't exist or doesn't belong to user
+                return null;
+            }
+            console.error("Database error in getGenerationById:", error);
+            throw new Error(`Failed to fetch generation: ${error.message}`);
+        }
+
+        if (!data) {
+            return null;
+        }
+
+        // Return the generation with flashcards
+        return {
+            ...data,
+            flashcards: data.flashcards || [],
+        };
+    } catch (error: unknown) {
+        console.error("Error in getGenerationById:", error);
         throw error; // Re-throw to be caught by API handler
     }
 }
