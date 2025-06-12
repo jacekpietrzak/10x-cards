@@ -112,3 +112,47 @@ export async function listFlashcards(
         },
     };
 }
+
+/**
+ * Fetches a single flashcard belonging to the specified user.
+ *
+ * @param id - The identifier of the flashcard to retrieve.
+ * @param userId - The identifier of the currently authenticated user.
+ * @param supabase - Supabase client instance.
+ *
+ * @returns A `FlashcardDto` if found, otherwise `null` when the flashcard does
+ *          not exist or does not belong to the user.
+ * @throws  Rethrows any unexpected Supabase errors.
+ */
+export async function getFlashcardById(
+    id: number,
+    userId: string,
+    supabase: SupabaseClient<Database>,
+): Promise<FlashcardDto | null> {
+    const { data, error } = await supabase
+        .from("flashcards")
+        .select(
+            "id, front, back, source, generation_id, created_at, updated_at",
+        )
+        .eq("id", id)
+        .eq("user_id", userId)
+        .single();
+
+    // When the record is not found PostgREST returns error code PGRST116 or 404/"".
+    // We treat this as a non-exceptional case and return `null` so that the route
+    // handler can translate it into a 404 response.
+    const isNotFoundError = error &&
+        (error.code === "PGRST116" || error.code === "404");
+
+    if (error && !isNotFoundError) {
+        // Log the unexpected error for observability purposes.
+        console.error("Error fetching flashcard:", error);
+        throw error;
+    }
+
+    if (!data || isNotFoundError) {
+        return null;
+    }
+
+    return data;
+}
