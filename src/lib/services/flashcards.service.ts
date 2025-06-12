@@ -1,6 +1,10 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/db/database.types";
-import type { FlashcardDto, FlashcardsCreateCommand } from "@/lib/types";
+import type {
+    FlashcardDto,
+    FlashcardsCreateCommand,
+    FlashcardUpdateDto,
+} from "@/lib/types";
 import type { FlashcardsQueryParams } from "@/lib/schemas/flashcards";
 
 export async function createFlashcards(
@@ -155,4 +159,66 @@ export async function getFlashcardById(
     }
 
     return data;
+}
+
+/**
+ * Updates a flashcard belonging to the specified user.
+ *
+ * @param id - The identifier of the flashcard to update.
+ * @param dto - The updated flashcard data.
+ * @param userId - The identifier of the currently authenticated user.
+ * @param supabase - Supabase client instance.
+ *
+ * @returns The updated `FlashcardDto` if successful, otherwise `null` when the flashcard
+ *          does not exist or does not belong to the user.
+ * @throws  Rethrows any unexpected Supabase errors.
+ */
+export async function updateFlashcard(
+    id: number,
+    dto: FlashcardUpdateDto,
+    userId: string,
+    supabase: SupabaseClient<Database>,
+): Promise<FlashcardDto | null> {
+    try {
+        // Remove undefined values to avoid overwriting with null
+        const payload = Object.fromEntries(
+            Object.entries(dto).filter(([, v]) => v !== undefined),
+        ) as FlashcardUpdateDto;
+
+        const { data, error } = await supabase
+            .from("flashcards")
+            .update(payload)
+            .eq("id", id)
+            .eq("user_id", userId)
+            .select(
+                "id, front, back, source, generation_id, created_at, updated_at",
+            )
+            .single();
+
+        const isNotFoundError = error &&
+            (error.code === "PGRST116" || error.code === "404");
+        const isForeignKeyError = error && error.code === "23503" &&
+            error.details?.includes("generation_id");
+
+        if (error && !isNotFoundError) {
+            console.error("Error updating flashcard:", error);
+
+            if (isForeignKeyError) {
+                throw new Error(
+                    "Invalid generation_id: The specified generation does not exist",
+                );
+            }
+
+            throw error;
+        }
+
+        if (!data || isNotFoundError) {
+            return null; // Flashcard does not exist or does not belong to user
+        }
+
+        return data;
+    } catch (err) {
+        console.error("Unexpected error in updateFlashcard:", err);
+        throw err;
+    }
 }
