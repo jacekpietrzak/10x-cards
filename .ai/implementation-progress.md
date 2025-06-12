@@ -14,7 +14,7 @@ Legend
 | endpoint-flashcards-POST-implementation-plan.md       | POST `/flashcards`                                           | ✅     | `src/app/api/flashcards/route.ts` (POST)                                     |
 | endpoint-flashcards-GET-implementation-plan.md        | GET `/flashcards`                                            | ✅     | `src/app/api/flashcards/route.ts` (GET handler)                              |
 | endpoint-flashcards_id-GET-implementation-plan.md     | GET `/flashcards/{id}`                                       | ✅     | `src/app/api/flashcards/[id]/route.ts`                                       | n   |
-| endpoint-flashcards_id-PUT-implementation-plan.md     | PUT `/flashcards/{id}`                                       | ❌     | Not implemented                                                              |
+| endpoint-flashcards_id-PUT-implementation-plan.md     | PUT `/flashcards/{id}`                                       | ✅     | `src/app/api/flashcards/[id]/route.ts` (PUT handler)                         |
 | endpoint-flashcards_id-DELETE-implementation-plan.md  | DELETE `/flashcards/{id}`                                    | ❌     | Not implemented                                                              |
 | endpoint-generation-error-logs-implementation-plan.md | GET `/generation-error-logs`                                 | ❌     | Endpoint directory absent                                                    |
 | plan-api.md                                           | Overall REST API roadmap                                     | 🟡     | Generations fully done; Flashcards CRUD & error-log endpoint pending         |
