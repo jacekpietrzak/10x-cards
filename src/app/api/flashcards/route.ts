@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { createClient } from "@/utils/supabase/server";
-import { DEFAULT_USER_ID } from "@/utils/supabase/server";
+import { createClient, getAuthenticatedUserId } from "@/utils/supabase/server";
 import { createFlashcards } from "@/lib/services/flashcards.service";
 import type { FlashcardsCreateCommand, Source } from "@/lib/types";
 import { flashcardsQueryParamsSchema } from "@/lib/schemas/flashcards";
@@ -59,11 +58,20 @@ export async function POST(request: Request) {
         // Create Supabase client
         const supabase = await createClient();
 
+        // Authenticate user
+        const authResult = await getAuthenticatedUserId(supabase);
+        if (authResult.error) {
+            return NextResponse.json(
+                { error: authResult.error.message },
+                { status: authResult.error.status },
+            );
+        }
+
         // Create flashcards using service
         const command = result.data as FlashcardsCreateCommand;
         const response = await createFlashcards(
             command,
-            DEFAULT_USER_ID,
+            authResult.userId,
             supabase,
         );
 
@@ -110,20 +118,20 @@ export async function GET(request: NextRequest) {
         // Create Supabase server client
         const supabase = await createClient();
 
-        // TODO: Production mode authentication
-        // const { data: { user }, error: authError } = await supabase.auth.getUser();
-        // if (authError || !user) {
-        //     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        // }
+        // Authenticate user
+        const authResult = await getAuthenticatedUserId(supabase);
+        if (authResult.error) {
+            return NextResponse.json(
+                { error: authResult.error.message },
+                { status: authResult.error.status },
+            );
+        }
 
-        // DEVELOPMENT MODE: Using DEFAULT_USER_ID
         const result = await listFlashcards(
-            DEFAULT_USER_ID,
+            authResult.userId,
             params,
             supabase,
         );
-        // PRODUCTION MODE: Uncomment below and remove DEFAULT_USER_ID usage
-        // const result = await listFlashcards(user.id, params, supabase);
 
         return NextResponse.json(result, { status: 200 });
     } catch (err) {

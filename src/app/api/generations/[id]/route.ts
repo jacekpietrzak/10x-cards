@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/utils/supabase/server";
+import { createClient, getAuthenticatedUserId } from "@/utils/supabase/server";
 import { z } from "zod";
 import { getGenerationById } from "@/lib/services/generation.service";
 
@@ -72,15 +72,11 @@ export async function GET(
         const supabase = await createClient();
 
         // 2. Autoryzacja użytkownika
-        const {
-            data: { user },
-            error: authError,
-        } = await supabase.auth.getUser();
-
-        if (authError || !user) {
+        const authResult = await getAuthenticatedUserId(supabase);
+        if (authResult.error) {
             return NextResponse.json(
-                { error: "Unauthorized" },
-                { status: 401 },
+                { error: authResult.error.message },
+                { status: authResult.error.status },
             );
         }
 
@@ -101,7 +97,11 @@ export async function GET(
         const id = parseResult.data;
 
         // 4. Wywołanie serwisu do pobrania generacji
-        const generation = await getGenerationById(id, user.id, supabase);
+        const generation = await getGenerationById(
+            id,
+            authResult.userId,
+            supabase,
+        );
 
         // 5. Sprawdzenie czy generacja istnieje
         if (!generation) {

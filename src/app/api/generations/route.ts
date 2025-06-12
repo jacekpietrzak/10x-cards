@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { createClient, DEFAULT_USER_ID } from "@/utils/supabase/server";
+import { createClient, getAuthenticatedUserId } from "@/utils/supabase/server";
 import { GenerateFlashcardsCommand } from "@/lib/types";
 import {
     generateFlashcards,
@@ -41,9 +41,18 @@ export async function POST(request: Request) {
     try {
         const command: GenerateFlashcardsCommand = parsed.data;
         const supabase = await createClient();
+
+        const authResult = await getAuthenticatedUserId(supabase);
+        if (authResult.error) {
+            return NextResponse.json(
+                { error: authResult.error.message },
+                { status: authResult.error.status },
+            );
+        }
+
         const result = await generateFlashcards(
             command,
-            DEFAULT_USER_ID,
+            authResult.userId,
             supabase,
         );
 
@@ -122,25 +131,22 @@ export async function GET(request: NextRequest) {
         // Create Supabase client
         const supabase = await createClient();
 
-        // TODO: Production authentication - uncomment when ready for production
-        // const { data: { user }, error: authError } = await supabase.auth.getUser();
-        // if (authError || !user) {
-        //     return NextResponse.json(
-        //         { error: "Unauthorized" },
-        //         { status: 401 },
-        //     );
-        // }
+        // Authenticate user
+        const authResult = await getAuthenticatedUserId(supabase);
+        if (authResult.error) {
+            return NextResponse.json(
+                { error: authResult.error.message },
+                { status: authResult.error.status },
+            );
+        }
 
         // Call service function to get generations list
-        // DEVELOPMENT MODE: Using DEFAULT_USER_ID for consistency with other endpoints
         const result = await listGenerations(
-            DEFAULT_USER_ID,
+            authResult.userId,
             page,
             limit,
             supabase,
         );
-        // PRODUCTION MODE: Uncomment the line below and comment out the one above
-        // const result = await listGenerations(user.id, page, limit, supabase);
 
         return NextResponse.json(result, { status: 200 });
     } catch (err) {
