@@ -222,3 +222,58 @@ export async function updateFlashcard(
         throw err;
     }
 }
+
+/**
+ * Deletes a flashcard belonging to the specified user.
+ *
+ * @param id - The identifier of the flashcard to delete.
+ * @param userId - The identifier of the currently authenticated user.
+ * @param supabase - Supabase client instance.
+ *
+ * @returns `true` if the flashcard was successfully deleted, otherwise `false` when the
+ *          flashcard does not exist or does not belong to the user.
+ * @throws  Rethrows any unexpected Supabase errors.
+ */
+export async function deleteFlashcard(
+    id: number,
+    userId: string,
+    supabase: SupabaseClient<Database>,
+): Promise<boolean> {
+    try {
+        // First verify that the flashcard exists and belongs to the user
+        const { data: existingFlashcard, error: selectError } = await supabase
+            .from("flashcards")
+            .select("id")
+            .eq("id", id)
+            .eq("user_id", userId)
+            .single();
+
+        const isNotFoundError = selectError &&
+            (selectError.code === "PGRST116" || selectError.code === "404");
+
+        if (selectError && !isNotFoundError) {
+            console.error("Error verifying flashcard ownership:", selectError);
+            throw selectError;
+        }
+
+        if (!existingFlashcard || isNotFoundError) {
+            return false; // Flashcard does not exist or does not belong to user
+        }
+
+        // Delete the flashcard
+        const { error: deleteError } = await supabase
+            .from("flashcards")
+            .delete()
+            .eq("id", id);
+
+        if (deleteError) {
+            console.error("Error deleting flashcard:", deleteError);
+            throw deleteError;
+        }
+
+        return true;
+    } catch (err) {
+        console.error("Unexpected error in deleteFlashcard:", err);
+        throw err;
+    }
+}

@@ -161,3 +161,11 @@ export interface GenerationsListResponseDto {
     data: GenerationDto[];
     pagination: PaginationDto;
 }
+
+// ------------------------------------------------------------------------------------------------
+// 13. Delete Flashcard Response DTO
+//     Response type for DELETE /flashcards/{id} endpoint
+// ------------------------------------------------------------------------------------------------
+export interface DeleteFlashcardResponseDto {
+    message: string;
+}
