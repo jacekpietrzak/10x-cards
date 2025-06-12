@@ -4,7 +4,7 @@ Legend
 ✅ Completed 🟡 Partially implemented ❌ Not started
 
 | Plan file                                             | Scope                                                        | Status | Evidence                                                                     |
-| ----------------------------------------------------- | ------------------------------------------------------------ | ------ | ---------------------------------------------------------------------------- |
+| ----------------------------------------------------- | ------------------------------------------------------------ | ------ | ---------------------------------------------------------------------------- | --- |
 | plan-db.md                                            | Supabase database schema                                     | ✅     | All tables & RLS policies present in `supabase/migrations/*`                 |
 | service-openrouter-implementation.plan.md             | OpenRouter service                                           | ✅     | `src/lib/services/openrouter.service.ts` + supporting types                  |
 | view-generate-implementation-plan.md                  | "Generate Flashcards" UI                                     | ✅     | `/generate` page and all components in `src/components/flashcard-generation` |
@@ -13,9 +13,9 @@ Legend
 | endpoint-generations_id-GET-implementation-plan.md    | GET `/generations/{id}`                                      | ✅     | `src/app/api/generations/[id]/route.ts`                                      |
 | endpoint-flashcards-POST-implementation-plan.md       | POST `/flashcards`                                           | ✅     | `src/app/api/flashcards/route.ts` (POST)                                     |
 | endpoint-flashcards-GET-implementation-plan.md        | GET `/flashcards`                                            | ✅     | `src/app/api/flashcards/route.ts` (GET handler)                              |
-| endpoint-flashcards_id-GET-implementation-plan.md     | GET `/flashcards/{id}`                                       | ❌     | No dynamic `[id]` route                                                      |
-| endpoint-flashcards-PUT-implementation-plan.md        | PUT `/flashcards/{id}`                                       | ❌     | Not implemented                                                              |
-| endpoint-flashcards-DELETE-implementation-plan.md     | DELETE `/flashcards/{id}`                                    | ❌     | Not implemented                                                              |
+| endpoint-flashcards_id-GET-implementation-plan.md     | GET `/flashcards/{id}`                                       | ✅     | `src/app/api/flashcards/[id]/route.ts`                                       | n   |
+| endpoint-flashcards_id-PUT-implementation-plan.md     | PUT `/flashcards/{id}`                                       | ❌     | Not implemented                                                              |
+| endpoint-flashcards_id-DELETE-implementation-plan.md  | DELETE `/flashcards/{id}`                                    | ❌     | Not implemented                                                              |
 | endpoint-generation-error-logs-implementation-plan.md | GET `/generation-error-logs`                                 | ❌     | Endpoint directory absent                                                    |
 | plan-api.md                                           | Overall REST API roadmap                                     | 🟡     | Generations fully done; Flashcards CRUD & error-log endpoint pending         |
 | plan-ui.md                                            | Full UI (login, generate, flashcards list, session, profile) | 🟡     | Auth & Generate views shipped; Flashcards list, session, profile not yet     |
@@ -32,7 +32,7 @@ Legend
 
 ### Outstanding Work
 
-1. Implement remaining Flashcards endpoints (`GET/PUT/DELETE /flashcards/{id}`).
+1. Implement remaining Flashcards endpoints (`PUT/DELETE /flashcards/{id}`).
 2. Add `generation-error-logs` retrieval endpoint.
 3. Deliver UI views for  
    • Flashcards management `/flashcards`  
