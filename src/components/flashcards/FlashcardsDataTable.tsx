@@ -96,7 +96,7 @@ function DataTablePagination({
         <div className="flex items-center space-x-2">
           <Button
             variant="outline"
-            className="h-8 w-8 p-0"
+            className="h-8 w-8 p-0 transition-colors hover:bg-muted hover:scale-105 disabled:pointer-events-none disabled:opacity-50"
             onClick={() => onPageChange(pagination.page - 1, pagination.limit)}
             disabled={!canGoPrevious}
           >
@@ -104,7 +104,7 @@ function DataTablePagination({
           </Button>
           <Button
             variant="outline"
-            className="h-8 w-8 p-0"
+            className="h-8 w-8 p-0 transition-colors hover:bg-muted hover:scale-105 disabled:pointer-events-none disabled:opacity-50"
             onClick={() => onPageChange(pagination.page + 1, pagination.limit)}
             disabled={!canGoNext}
           >
@@ -132,24 +132,25 @@ function DataTableRowActions({
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
-          className="h-8 w-8 p-0"
+          className="h-8 w-8 p-0 cursor-pointer transition-colors hover:bg-muted hover:scale-105 disabled:pointer-events-none disabled:opacity-50"
           disabled={isOperationInProgress}
         >
           <span className="sr-only">Otwórz menu</span>
           <MoreHorizontal className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
+      <DropdownMenuContent align="end" className="min-w-32">
         <DropdownMenuItem
           onClick={() => onEdit(flashcard)}
           disabled={isOperationInProgress}
+          className="cursor-pointer transition-colors hover:bg-muted focus:bg-muted disabled:pointer-events-none disabled:opacity-50"
         >
           <Edit className="mr-2 h-4 w-4" />
           Edytuj
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => onDelete(flashcard.id)}
-          className="text-red-600 focus:text-red-600"
+          className="cursor-pointer text-red-600 focus:text-red-600 hover:bg-red-50 focus:bg-red-50 transition-colors disabled:pointer-events-none disabled:opacity-50"
           disabled={isOperationInProgress}
         >
           <Trash2 className="mr-2 h-4 w-4" />
@@ -185,7 +186,10 @@ export function FlashcardsDataTable({
             </TableHeader>
             <TableBody>
               {[...Array(5)].map((_, i) => (
-                <TableRow key={i}>
+                <TableRow
+                  key={i}
+                  className="hover:bg-muted/50 transition-colors"
+                >
                   <TableCell>
                     <div className="h-4 bg-muted rounded animate-pulse" />
                   </TableCell>
@@ -259,11 +263,15 @@ export function FlashcardsDataTable({
           </TableHeader>
           <TableBody>
             {data.map((flashcard) => (
-              <TableRow key={flashcard.id}>
-                <TableCell className="font-medium max-w-[200px]">
-                  <div className="truncate" title={flashcard.front}>
-                    {flashcard.front}
-                  </div>
+              <TableRow
+                key={flashcard.id}
+                className="hover:bg-muted/50 transition-colors"
+              >
+                <TableCell
+                  className="font-medium truncate max-w-md"
+                  title={flashcard.front}
+                >
+                  {flashcard.front}
                 </TableCell>
                 <TableCell className="max-w-[300px]">
                   <div className="truncate" title={flashcard.back}>

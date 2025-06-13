@@ -209,7 +209,7 @@ export default function FlashcardsPage() {
             <div className="text-red-600 text-sm mb-4">{error}</div>
             <button
               onClick={() => fetchFlashcards(pagination.page, pagination.limit)}
-              className="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              className="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-200 cursor-pointer hover:shadow-md"
             >
               Spróbuj ponownie
             </button>

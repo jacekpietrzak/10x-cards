@@ -19,7 +19,7 @@ export function FlashcardsToolbar({
       </div>
       <Button
         onClick={onAddNew}
-        className="gap-2"
+        className="gap-2 cursor-pointer transition-all duration-200  hover:shadow-md disabled:pointer-events-none disabled:opacity-50"
         disabled={isOperationInProgress}
       >
         <Plus className="h-4 w-4" />

@@ -188,13 +188,18 @@ export function FlashcardFormModal({
                 variant="outline"
                 onClick={handleClose}
                 disabled={isSubmitting}
+                className="cursor-pointer transition-all duration-200 hover:bg-muted hover:scale-105 disabled:pointer-events-none disabled:opacity-50"
               >
                 Anuluj
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="cursor-pointer transition-all duration-200 hover:scale-105 hover:shadow-md disabled:pointer-events-none disabled:opacity-50"
+              >
                 {isSubmitting ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="h-4 w-4 animate-spin" />
                     Zapisywanie...
                   </>
                 ) : isEditing ? (

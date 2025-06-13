@@ -43,13 +43,17 @@ export function DeleteConfirmationDialog({
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={onClose} disabled={isLoading}>
+          <AlertDialogCancel
+            onClick={onClose}
+            disabled={isLoading}
+            className="cursor-pointer transition-all duration-200 hover:bg-muted hover:scale-105 disabled:pointer-events-none disabled:opacity-50"
+          >
             Anuluj
           </AlertDialogCancel>
           <AlertDialogAction
             onClick={onConfirm}
             disabled={isLoading}
-            className="bg-red-600 hover:bg-red-700 focus:ring-red-600 disabled:opacity-50"
+            className="bg-red-600 hover:bg-red-700 focus:ring-red-600 cursor-pointer transition-all duration-200 hover:scale-105 hover:shadow-md disabled:pointer-events-none disabled:opacity-50"
           >
             {isLoading ? (
               <>
