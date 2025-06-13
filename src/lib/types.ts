@@ -169,3 +169,13 @@ export interface GenerationsListResponseDto {
 export interface DeleteFlashcardResponseDto {
     message: string;
 }
+
+// ------------------------------------------------------------------------------------------------
+// 14. Flashcard View Model
+//     Represents flashcard data in forms and UI components
+// ------------------------------------------------------------------------------------------------
+export interface FlashcardViewModel {
+    id?: number;
+    front: string;
+    back: string;
+}
