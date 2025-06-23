@@ -2,6 +2,7 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/db/database.types";
 import type {
     FlashcardDto,
+    FlashcardReviewDto,
     FlashcardsCreateCommand,
     FlashcardUpdateDto,
 } from "@/lib/types";
@@ -24,7 +25,7 @@ export async function createFlashcards(
             .from("flashcards")
             .insert(toInsert)
             .select(
-                "id, front, back, source, generation_id, created_at, updated_at",
+                "id, front, back, source, generation_id, created_at, updated_at, stability, difficulty, due, lapses, state, last_review",
             );
 
         if (error || !data) {
@@ -67,7 +68,7 @@ export async function listFlashcards(
     let query = supabase
         .from("flashcards")
         .select(
-            "id, front, back, source, generation_id, created_at, updated_at",
+            "id, front, back, source, generation_id, created_at, updated_at, stability, difficulty, due, lapses, state, last_review",
             {
                 count: "exact",
             },
@@ -136,7 +137,7 @@ export async function getFlashcardById(
     const { data, error } = await supabase
         .from("flashcards")
         .select(
-            "id, front, back, source, generation_id, created_at, updated_at",
+            "id, front, back, source, generation_id, created_at, updated_at, stability, difficulty, due, lapses, state, last_review",
         )
         .eq("id", id)
         .eq("user_id", userId)
@@ -191,7 +192,7 @@ export async function updateFlashcard(
             .eq("id", id)
             .eq("user_id", userId)
             .select(
-                "id, front, back, source, generation_id, created_at, updated_at",
+                "id, front, back, source, generation_id, created_at, updated_at, stability, difficulty, due, lapses, state, last_review",
             )
             .single();
 
@@ -274,6 +275,64 @@ export async function deleteFlashcard(
         return true;
     } catch (err) {
         console.error("Unexpected error in deleteFlashcard:", err);
+        throw err;
+    }
+}
+
+/**
+ * Updates FSRS parameters for a flashcard after a review session.
+ *
+ * @param id - The identifier of the flashcard to update.
+ * @param userId - The identifier of the currently authenticated user.
+ * @param reviewData - The FSRS parameters to update (stability, difficulty, due, lapses, state, last_review).
+ * @param supabase - Supabase client instance.
+ *
+ * @returns The updated `FlashcardDto` if successful, otherwise `null` when the flashcard
+ *          does not exist or does not belong to the user.
+ * @throws  Rethrows any unexpected Supabase errors.
+ */
+export async function updateFlashcardReview(
+    id: number,
+    userId: string,
+    reviewData: FlashcardReviewDto,
+    supabase: SupabaseClient<Database>,
+): Promise<FlashcardDto | null> {
+    try {
+        // Convert ISO date strings to Date objects for database insertion
+        const payload = {
+            stability: reviewData.stability,
+            difficulty: reviewData.difficulty,
+            due: reviewData.due,
+            lapses: reviewData.lapses,
+            state: reviewData.state,
+            last_review: reviewData.last_review,
+        };
+
+        const { data, error } = await supabase
+            .from("flashcards")
+            .update(payload)
+            .eq("id", id)
+            .eq("user_id", userId)
+            .select(
+                "id, front, back, source, generation_id, created_at, updated_at, stability, difficulty, due, lapses, state, last_review",
+            )
+            .single();
+
+        const isNotFoundError = error &&
+            (error.code === "PGRST116" || error.code === "404");
+
+        if (error && !isNotFoundError) {
+            console.error("Error updating flashcard review data:", error);
+            throw error;
+        }
+
+        if (!data || isNotFoundError) {
+            return null; // Flashcard does not exist or does not belong to user
+        }
+
+        return data;
+    } catch (err) {
+        console.error("Unexpected error in updateFlashcardReview:", err);
         throw err;
     }
 }

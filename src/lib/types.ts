@@ -14,6 +14,7 @@ export type GenerationErrorLog =
 // ------------------------------------------------------------------------------------------------
 // 1. Flashcard DTO
 //    Represents a flashcard as returned by the API endpoints (GET /flashcards, GET /flashcards/{id})
+//    Updated to include FSRS fields for spaced repetition
 // ------------------------------------------------------------------------------------------------
 export type FlashcardDto = Pick<
     Flashcard,
@@ -24,10 +25,29 @@ export type FlashcardDto = Pick<
     | "generation_id"
     | "created_at"
     | "updated_at"
+    | "stability"
+    | "difficulty"
+    | "due"
+    | "lapses"
+    | "state"
+    | "last_review"
 >;
 
 // ------------------------------------------------------------------------------------------------
-// 2. Pagination DTO
+// 2. Flashcard Review DTO
+//    Used in PUT /flashcards/{id}/review endpoint to update FSRS parameters after review session
+// ------------------------------------------------------------------------------------------------
+export interface FlashcardReviewDto {
+    stability: number;
+    difficulty: number;
+    due: string; // ISO 8601 date string
+    lapses: number;
+    state: number;
+    last_review: string; // ISO 8601 date string
+}
+
+// ------------------------------------------------------------------------------------------------
+// 3. Pagination DTO
 //    Contains pagination details used in list responses
 // ------------------------------------------------------------------------------------------------
 export interface PaginationDto {
@@ -37,7 +57,7 @@ export interface PaginationDto {
 }
 
 // ------------------------------------------------------------------------------------------------
-// 3. Flashcards List Response DTO
+// 4. Flashcards List Response DTO
 //    Combines an array of flashcards with pagination metadata (GET /flashcards)
 // ------------------------------------------------------------------------------------------------
 export interface FlashcardsListResponseDto {
@@ -46,7 +66,7 @@ export interface FlashcardsListResponseDto {
 }
 
 // ------------------------------------------------------------------------------------------------
-// 4. Flashcard Create DTO & Command Model
+// 5. Flashcard Create DTO & Command Model
 //    Used in the POST /flashcards endpoint to create one or more flashcards.
 //    Validation rules:
 //      - front: maximum length 200 characters
@@ -68,7 +88,7 @@ export interface FlashcardsCreateCommand {
 }
 
 // ------------------------------------------------------------------------------------------------
-// 5. Flashcard Update DTO (Command Model)
+// 6. Flashcard Update DTO (Command Model)
 //    For the PUT /flashcards/{id} endpoint to update existing flashcards.
 //    This model is a partial update of flashcard fields.
 // ------------------------------------------------------------------------------------------------
@@ -80,7 +100,7 @@ export type FlashcardUpdateDto = Partial<{
 }>;
 
 // ------------------------------------------------------------------------------------------------
-// 6. Generate Flashcards Command
+// 7. Generate Flashcards Command
 //    Used in the POST /generations endpoint to initiate the AI flashcard generation process.
 //    The "source_text" must be between 1000 and 10000 characters.
 // ------------------------------------------------------------------------------------------------
@@ -89,7 +109,7 @@ export interface GenerateFlashcardsCommand {
 }
 
 // ------------------------------------------------------------------------------------------------
-// 7. Flashcard Proposal DTO
+// 8. Flashcard Proposal DTO
 //    Represents a single flashcard proposal generated from AI, always with source "ai-full".
 // ------------------------------------------------------------------------------------------------
 export interface FlashcardProposalDto {
@@ -100,7 +120,7 @@ export interface FlashcardProposalDto {
 }
 
 // ------------------------------------------------------------------------------------------------
-// 8. Generation Create Response DTO
+// 9. Generation Create Response DTO
 //    This type describes the response from the POST /generations endpoint.
 // ------------------------------------------------------------------------------------------------
 export interface GenerationCreateResponseDto {
@@ -110,7 +130,7 @@ export interface GenerationCreateResponseDto {
 }
 
 // ------------------------------------------------------------------------------------------------
-// 9. Generation Detail DTO
+// 10. Generation Detail DTO
 //    Provides detailed information for a generation request (GET /generations/{id}),
 //    including metadata from the generations table and optionally, the associated flashcards.
 // ------------------------------------------------------------------------------------------------
@@ -119,7 +139,7 @@ export type GenerationDetailDto = Generation & {
 };
 
 // ------------------------------------------------------------------------------------------------
-// 10. Generation Error Log DTO
+// 11. Generation Error Log DTO
 //     Represents an error log entry for the AI flashcard generation process (GET /generation-error-logs).
 // ------------------------------------------------------------------------------------------------
 export type GenerationErrorLogDto = Pick<
@@ -135,7 +155,7 @@ export type GenerationErrorLogDto = Pick<
 >;
 
 // ------------------------------------------------------------------------------------------------
-// 11. Generation DTO
+// 12. Generation DTO
 //     Represents generation metadata for the GET /generations endpoint (list view).
 //     Contains only the essential fields without the full detail.
 // ------------------------------------------------------------------------------------------------
@@ -154,7 +174,7 @@ export type GenerationDto = Pick<
 >;
 
 // ------------------------------------------------------------------------------------------------
-// 12. Generations List Response DTO
+// 13. Generations List Response DTO
 //     Combines an array of generation metadata with pagination details (GET /generations).
 // ------------------------------------------------------------------------------------------------
 export interface GenerationsListResponseDto {
@@ -163,7 +183,7 @@ export interface GenerationsListResponseDto {
 }
 
 // ------------------------------------------------------------------------------------------------
-// 13. Delete Flashcard Response DTO
+// 14. Delete Flashcard Response DTO
 //     Response type for DELETE /flashcards/{id} endpoint
 // ------------------------------------------------------------------------------------------------
 export interface DeleteFlashcardResponseDto {
@@ -171,7 +191,7 @@ export interface DeleteFlashcardResponseDto {
 }
 
 // ------------------------------------------------------------------------------------------------
-// 14. Flashcard View Model
+// 15. Flashcard View Model
 //     Represents flashcard data in forms and UI components
 // ------------------------------------------------------------------------------------------------
 export interface FlashcardViewModel {

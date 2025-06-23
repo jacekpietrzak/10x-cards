@@ -38,30 +38,48 @@ export type Database = {
         Row: {
           back: string
           created_at: string
+          difficulty: number | null
+          due: string | null
           front: string
           generation_id: number | null
           id: number
+          lapses: number | null
+          last_review: string | null
           source: string
+          stability: number | null
+          state: number | null
           updated_at: string
           user_id: string
         }
         Insert: {
           back: string
           created_at?: string
+          difficulty?: number | null
+          due?: string | null
           front: string
           generation_id?: number | null
           id?: number
+          lapses?: number | null
+          last_review?: string | null
           source: string
+          stability?: number | null
+          state?: number | null
           updated_at?: string
           user_id: string
         }
         Update: {
           back?: string
           created_at?: string
+          difficulty?: number | null
+          due?: string | null
           front?: string
           generation_id?: number | null
           id?: number
+          lapses?: number | null
+          last_review?: string | null
           source?: string
+          stability?: number | null
+          state?: number | null
           updated_at?: string
           user_id?: string
         }

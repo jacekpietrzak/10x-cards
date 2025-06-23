@@ -29,6 +29,7 @@
   - TypeScript 5
   - Tailwind CSS 4
   - shadcn/ui component library
+  - ts-fsrs (Spaced Repetition Algorithm)
 
 - **Backend & Database**
 

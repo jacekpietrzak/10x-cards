@@ -116,9 +116,27 @@
   - **Errors**: 400 for invalid input, 404 if flashcard not found, 401 Unauthorized.
 
 - **DELETE `/flashcards/{id}`**
+
   - **Description**: Delete a flashcard.
   - **Response JSON**: Success message.
   - **Errors**: 404 if flashcard not found, 401 Unauthorized.
+
+- **PUT `/flashcards/{id}/review`**
+
+  - **Description**: Updates the FSRS (Free Spaced Repetition Scheduler) state of a flashcard after a review session. This includes fields like stability, difficulty, and the next due date.
+  - **Request JSON**:
+    ```json
+    {
+      "stability": 2.5,
+      "difficulty": 7.0,
+      "due": "2024-09-15T10:00:00Z",
+      "lapses": 0,
+      "state": 2,
+      "last_review": "2024-09-12T09:30:00Z"
+    }
+    ```
+  - **Response JSON**: Updated flashcard object including review state.
+  - **Errors**: 400 for invalid input, 404 if flashcard not found, 401 Unauthorized.
 
 ### 2.3. Generations
 
