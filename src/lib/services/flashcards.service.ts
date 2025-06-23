@@ -14,10 +14,18 @@ export async function createFlashcards(
     supabase: SupabaseClient<Database>,
 ): Promise<{ flashcards: FlashcardDto[] }> {
     try {
-        // Map command to database insert format
+        // Map command to database insert format with FSRS defaults for new cards
+        const now = new Date();
         const toInsert = command.flashcards.map((f) => ({
             ...f,
             user_id: userId,
+            // Set FSRS defaults for new cards to make them immediately available for learning
+            stability: null, // Will be set by FSRS algorithm on first review
+            difficulty: null, // Will be set by FSRS algorithm on first review
+            due: now.toISOString(), // Available for learning immediately
+            lapses: 0, // Start with no lapses
+            state: 0, // State.New
+            last_review: null, // No previous review
         }));
 
         // Insert flashcards and return created records
@@ -60,7 +68,8 @@ export async function listFlashcards(
         pagination: { page: number; limit: number; total: number };
     }
 > {
-    const { page, limit, sort, order, source, generation_id } = params;
+    const { page, limit, sort, order, source, generation_id, due_before } =
+        params;
 
     const offset = (page - 1) * limit;
 
@@ -82,6 +91,12 @@ export async function listFlashcards(
 
     if (generation_id) {
         query = query.eq("generation_id", generation_id);
+    }
+
+    if (due_before) {
+        // Filter cards due before the specified date
+        // Include both cards with due dates and new cards (state = 0) that might have null due
+        query = query.or(`due.lte.${due_before},and(due.is.null,state.eq.0)`);
     }
 
     // Sorting

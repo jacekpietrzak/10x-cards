@@ -14,12 +14,14 @@ export const flashcardsQueryParamsSchema = z.object({
                 "back",
                 "source",
                 "updated_at",
+                "due",
             ] as const,
         )
         .default("created_at"),
     order: z.enum(["asc", "desc"] as const).default("asc"),
     source: z.enum(["ai-full", "ai-edited", "manual"] as const).optional(),
     generation_id: z.coerce.number().int().min(1).optional(),
+    due_before: z.string().datetime().optional(),
 });
 
 export type FlashcardsQueryParams = z.infer<typeof flashcardsQueryParamsSchema>;
@@ -58,7 +60,7 @@ export type FlashcardUpdateInput = z.infer<typeof flashcardUpdateSchema>;
  */
 export const flashcardReviewSchema = z.object({
     stability: z.number()
-        .min(0.1, "Stability must be at least 0.1")
+        .min(0.01, "Stability must be at least 0.01")
         .max(999999, "Stability cannot exceed 999999")
         .finite("Stability must be a finite number"),
     difficulty: z.number()

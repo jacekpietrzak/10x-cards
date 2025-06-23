@@ -252,7 +252,13 @@ export async function getGenerationById(
                     source,
                     generation_id,
                     created_at,
-                    updated_at
+                    updated_at,
+                    stability,
+                    difficulty,
+                    due,
+                    lapses,
+                    state,
+                    last_review
                 )
             `)
             .eq("id", generationId)
