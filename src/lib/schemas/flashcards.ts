@@ -51,3 +51,38 @@ export const flashcardUpdateSchema = z.object({
 });
 
 export type FlashcardUpdateInput = z.infer<typeof flashcardUpdateSchema>;
+
+/**
+ * Zod schema for validating the body of the PUT /flashcards/{id}/review endpoint.
+ * Used to update FSRS (Free Spaced Repetition Scheduler) parameters after a review session.
+ */
+export const flashcardReviewSchema = z.object({
+    stability: z.number()
+        .min(0.1, "Stability must be at least 0.1")
+        .max(999999, "Stability cannot exceed 999999")
+        .finite("Stability must be a finite number"),
+    difficulty: z.number()
+        .min(1, "Difficulty must be at least 1")
+        .max(10, "Difficulty cannot exceed 10")
+        .finite("Difficulty must be a finite number"),
+    due: z.string()
+        .datetime("Due date must be a valid ISO 8601 datetime string")
+        .refine((date) => new Date(date) > new Date(), {
+            message: "Due date must be in the future",
+        }),
+    lapses: z.number()
+        .int("Lapses must be an integer")
+        .min(0, "Lapses cannot be negative")
+        .max(999999, "Lapses cannot exceed 999999"),
+    state: z.number()
+        .int("State must be an integer")
+        .min(0, "State must be between 0 and 3")
+        .max(3, "State must be between 0 and 3"),
+    last_review: z.string()
+        .datetime("Last review date must be a valid ISO 8601 datetime string")
+        .refine((date) => new Date(date) <= new Date(), {
+            message: "Last review date cannot be in the future",
+        }),
+});
+
+export type FlashcardReviewInput = z.infer<typeof flashcardReviewSchema>;

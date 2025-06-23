@@ -27,7 +27,7 @@ export async function createClient() {
     },
   );
 }
-export const DEFAULT_USER_ID = "753cd917-10b5-41b0-b25d-b8212b1222f7";
+export const DEFAULT_USER_ID = "e6f961f9-34f2-4bc8-a12d-13256f80749a";
 
 /**
  * Helper function to get authenticated user ID.
