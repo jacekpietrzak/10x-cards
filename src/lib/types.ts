@@ -199,3 +199,24 @@ export interface FlashcardViewModel {
     front: string;
     back: string;
 }
+
+// ------------------------------------------------------------------------------------------------
+// 16. FSRS Grade
+//     Represents rating values for the FSRS (Free Spaced Repetition Scheduler) algorithm
+//     1: Again, 2: Hard, 3: Good, 4: Easy
+// ------------------------------------------------------------------------------------------------
+export type FSRSGrade = 1 | 2 | 3 | 4;
+
+// ------------------------------------------------------------------------------------------------
+// 17. Session View Model
+//     Represents the state of a review session for the session learning view
+// ------------------------------------------------------------------------------------------------
+export interface SessionViewModel {
+    cardsToReview: FlashcardDto[];
+    currentCardIndex: number;
+    isAnswerVisible: boolean;
+    sessionState: "loading" | "active" | "finished" | "empty" | "error";
+    error: string | null;
+    reviewedCount: number;
+    isSubmittingReview: boolean;
+}
