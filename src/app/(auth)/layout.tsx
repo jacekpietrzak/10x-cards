@@ -1,8 +1,6 @@
-import React from "react";
-import Link from "next/link";
-
 export const metadata = {
-  title: "Authentication - 10xCards",
+  title: "10xCards Dashboard",
+  description: "Manage your flashcards and study sessions",
 };
 
 export default function AuthLayout({
@@ -10,16 +8,5 @@ export default function AuthLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <main className="flex min-h-screen justify-center bg-background">
-      <div className="w-full p-4">
-        <div className="flex justify-center mb-6">
-          <Link href="/" className="text-2xl font-bold">
-            10xCards
-          </Link>
-        </div>
-        {children}
-      </div>
-    </main>
-  );
+  return <main className="flex-1">{children}</main>;
 }

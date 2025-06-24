@@ -12,6 +12,22 @@ export type GenerationErrorLog =
     Database["public"]["Tables"]["generation_error_logs"]["Row"];
 
 // ------------------------------------------------------------------------------------------------
+// Navigation Types
+// ------------------------------------------------------------------------------------------------
+
+// Typ dla elementów nawigacji publicznej
+export interface PublicNavItem {
+    label: string;
+    href: string;
+}
+
+// Typ dla elementów nawigacji prywatnej
+export interface NavItem {
+    label: string;
+    href: string;
+}
+
+// ------------------------------------------------------------------------------------------------
 // 1. Flashcard DTO
 //    Represents a flashcard as returned by the API endpoints (GET /flashcards, GET /flashcards/{id})
 //    Updated to include FSRS fields for spaced repetition
