@@ -22,6 +22,7 @@ Legend
 | plan-api.md                                           | Overall REST API roadmap                                     | ✅     | All API endpoints completed including FSRS review endpoint                                                       |
 | plan-ui.md                                            | Full UI (login, generate, flashcards list, session, profile) | 🟡     | Auth, Generate, Profile views & Main Navigation shipped; Flashcards list, session views not yet                  |
 | auth-spec.md                                          | Auth flow spec                                               | 🟡     | Front-end forms, login/logout flow & API exist; registration / reset APIs missing                                |
+| plan-refactor-server-actions.md                       | Refactor API Routes to Server Actions                        | ❌     | To be implemented after core functionality is complete.                                                          |
 
 ---
 
@@ -55,3 +56,9 @@ Legend
 - **Main Navigation**: Complete implementation of a conditional, responsive navigation system for public and authenticated users.
 
 Overall completion: **≈85 %** (increased from 78% with FSRS endpoint & navigation system addition).
+
+---
+
+### Future Improvements & Technical Debt
+
+- **Refactor API Routes to Server Actions**: Migrate existing REST endpoints (for `flashcards`, `generations`, `review`) to use Next.js Server Actions. This will simplify the architecture, reduce client-side code complexity, and align the codebase with modern Next.js best practices.

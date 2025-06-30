@@ -93,6 +93,7 @@ Kryteria akceptacji:
 - Pole tekstowe oczekuje od 1000 do 10 000 znaków.
 - Po kliknięciu przycisku generowania aplikacja komunikuje się z API modelu LLM i wyświetla listę wygenerowanych propozycji fiszek do akceptacji przez użytkownika.
 - W przypadku problemów z API lub braku odpowiedzi modelu użytkownik zobaczy stosowny komunikat o błędzie.
+- Funkcjonalność generowania fiszek nie jest dostępna bez logowania się do systemu (US-001, US-002, US-009)
 
 ID: US-004
 Tytuł: Przegląd i zatwierdzanie propozycji fiszek
@@ -102,6 +103,7 @@ Kryteria akceptacji:
 - Lista wygenerowanych fiszek jest wyświetlana pod formularzem generowania.
 - Przy każdej fiszce znajduje się przycisk pozwalający na jej zatwierdzenie, edycję lub odrzucenie.
 - Po zatwierdzeniu wybranych fiszek użytkownik może kliknąć przycisk zapisu i dodać je do bazy danych.
+- Funkcjonalność przegladania i zatwierdzania propozycji fiszek nie jest dostępna bez logowania się do systemu (US-001, US-002, US-009)
 
 ID: US-005
 Tytuł: Edycja fiszek utworzonych ręcznie i generowanych przez AI
@@ -111,6 +113,7 @@ Kryteria akceptacji:
 - Istnieje lista zapisanych fiszek (zarówno ręcznie tworzonych, jak i zatwierdzonych wygenerowanych).
 - Każdą fiszkę można kliknąć i wejść w tryb edycji.
 - Zmiany są zapisywane w bazie danych po zatwierdzeniu.
+- Funkcjonalność edycji fiszek nie jest dostępna bez logowania się do systemu (US-001, US-002, US-009)
 
 ID: US-006
 Tytuł: Usuwanie fiszek
@@ -120,6 +123,7 @@ Kryteria akceptacji:
 - Przy każdej fiszce na liście (w widoku "Moje fiszki") widoczna jest opcja usunięcia.
 - Po wybraniu usuwania użytkownik musi potwierdzić operację, zanim fiszka zostanie trwale usunięta.
 - Fiszki zostają trwale usunięte z bazy danych po potwierdzeniu.
+- Funkcjonalność usuwania fiszek nie jest dostępna bez logowania się do systemu (US-001, US-002, US-009)
 
 ID: US-007
 Tytuł: Ręczne tworzenie fiszek
@@ -129,6 +133,7 @@ Kryteria akceptacji:
 - W widoku "Moje fiszki" znajduje się przycisk dodania nowej fiszki.
 - Naciśnięcie przycisku otwiera formularz z polami "Przód" i "Tył".
 - Po zapisaniu nowa fiszka pojawia się na liście.
+- Funkcjonalność ręcznego tworzenia fiszek nie jest dostępna bez logowania się do systemu (US-001, US-002, US-009)
 
 ID: US-008
 Tytuł: Sesja nauki z algorytmem powtórek
@@ -139,6 +144,7 @@ Kryteria akceptacji:
 - Na start wyświetlany jest przód fiszki, poprzez interakcję użytkownik wyświetla jej tył
 - Użytkownik ocenia zgodnie z oczekiwaniami algorytmu na ile przyswoił fiszkę
 - Następnie algorytm pokazuje kolejną fiszkę w ramach sesji nauki
+- Funkcjonalność sesji nauki nie jest dostępna bez logowania się do systemu (US-001, US-002, US-009)
 
 ID: US-009
 Tytuł: Bezpieczny dostęp i autoryzacja

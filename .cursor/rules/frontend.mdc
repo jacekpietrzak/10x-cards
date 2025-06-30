@@ -18,6 +18,7 @@ alwaysApply: false
 - Implement dark mode with the dark: variant
 - Use responsive variants (sm:, md:, lg:, etc.) for adaptive designs
 - Leverage state variants (hover:, focus:, active:, etc.) for interactive elements
+- Use cursor pointer for interactive elements
 
 ### Guidelines for Accessibility
 
