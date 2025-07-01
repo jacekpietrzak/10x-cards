@@ -1,93 +1,98 @@
 "use client";
 
-import React, { useState } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema, LoginInput } from "@/lib/schemas/auth";
-import { FormInput } from "@/components/ui/FormInput";
-import { FormButton } from "@/components/ui/FormButton";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
+
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 
 export function LoginForm() {
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<LoginInput>({
+  const form = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
   });
-  const [formError, setFormError] = useState<string | null>(null);
-  const router = useRouter();
 
-  const onSubmit = async (data: LoginInput) => {
-    setFormError(null);
-    try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      const result = await res.json();
-      if (!result.success) {
-        setFormError(result.error);
-        toast.error(result.error);
-        return;
-      }
-      toast.success("Zalogowano pomyślnie");
-      router.push("/generate");
-      router.refresh();
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Coś poszło nie tak";
-      setFormError(message);
-      toast.error(message);
-    }
-  };
+  // TODO: Implement server action for login
+  function onSubmit(values: LoginInput) {
+    console.log(values);
+  }
 
   return (
-    <Card>
+    <Card className="mx-auto w-full max-w-lg">
       <CardHeader>
-        <CardTitle>Zaloguj się</CardTitle>
+        <CardTitle className="text-2xl">Sign in</CardTitle>
+        <CardDescription>
+          Enter your email below to sign in to your account
+        </CardDescription>
       </CardHeader>
       <CardContent>
-        {formError && (
-          <div
-            role="alert"
-            aria-live="polite"
-            className="mb-4 p-4 bg-destructive/15 text-destructive rounded-md"
-          >
-            {formError}
-          </div>
-        )}
-        <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4">
-          <FormInput
-            id="email"
-            label="Email"
-            type="email"
-            {...register("email")}
-            error={errors.email?.message?.toString()}
-          />
-          <FormInput
-            id="password"
-            label="Hasło"
-            type="password"
-            {...register("password")}
-            error={errors.password?.message?.toString()}
-          />
-          <div className="flex justify-between items-center">
-            <Link
-              href="/forgot-password"
-              className="text-sm text-primary hover:underline"
-            >
-              Zapomniałeś hasła?
-            </Link>
-            <FormButton type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Logowanie..." : "Zaloguj"}
-            </FormButton>
-          </div>
-        </form>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input placeholder="m@example.com" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <div className="flex items-center gap-2">
+                    <FormLabel>Password</FormLabel>
+                    <Link
+                      href="/forgot-password"
+                      className="ml-auto inline-block text-sm underline"
+                    >
+                      Forgot your password?
+                    </Link>
+                  </div>
+                  <FormControl>
+                    <Input type="password" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <Button type="submit" className="w-full">
+              Login
+            </Button>
+          </form>
+        </Form>
+        <div className="mt-4 text-center text-sm">
+          Don&apos;t have an account?{" "}
+          <Link href="/register" className="underline">
+            Sign up
+          </Link>
+        </div>
       </CardContent>
     </Card>
   );

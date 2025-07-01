@@ -1,51 +1,76 @@
 "use client";
 
-import React from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { forgotPasswordSchema, ForgotPasswordInput } from "@/lib/schemas/auth";
-import { FormInput } from "@/components/ui/FormInput";
-import { FormButton } from "@/components/ui/FormButton";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 
 export function ForgotPasswordForm() {
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<ForgotPasswordInput>({
+  const form = useForm<ForgotPasswordInput>({
     resolver: zodResolver(forgotPasswordSchema),
+    defaultValues: {
+      email: "",
+    },
   });
 
-  const onSubmit = async (data: ForgotPasswordInput) => {
-    // TODO: Handle forgot password submission
-    console.log("Forgot password data:", data);
-  };
+  // TODO: Implement server action for sending password reset link
+  function onSubmit(values: ForgotPasswordInput) {
+    console.log(values);
+  }
 
   return (
-    <Card>
+    <Card className="mx-auto w-full max-w-lg">
       <CardHeader>
-        <CardTitle>Odzyskiwanie hasła</CardTitle>
+        <CardTitle className="text-2xl">Forgot Password</CardTitle>
+        <CardDescription>
+          Enter your email and we will send you a link to reset your password.
+        </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4">
-          <FormInput
-            id="email"
-            label="Email"
-            type="email"
-            {...register("email")}
-            error={errors.email?.message?.toString()}
-          />
-          <FormButton type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Wysyłanie..." : "Wyślij link resetujący"}
-          </FormButton>
-          <p className="text-sm text-center">
-            <Link href="/login" className="text-primary hover:underline">
-              Powrót do logowania
-            </Link>
-          </p>
-        </form>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input placeholder="m@example.com" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <Button type="submit" className="w-full">
+              Send reset link
+            </Button>
+          </form>
+        </Form>
+        <div className="mt-4 text-center text-sm">
+          Remembered your password?{" "}
+          <Link href="/login" className="underline">
+            Sign in
+          </Link>
+        </div>
       </CardContent>
     </Card>
   );

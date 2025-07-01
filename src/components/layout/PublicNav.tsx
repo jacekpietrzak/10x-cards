@@ -26,11 +26,9 @@ export function PublicNav({ navItems }: PublicNavProps) {
 
       {/* Auth Buttons */}
       <div className="flex items-center space-x-4">
-        <Button variant="ghost" size="sm" asChild>
-          <Link href="/login">Zaloguj się</Link>
-        </Button>
-        <Button size="sm" asChild>
-          <Link href="/register">Zarejestruj się</Link>
+        <Link href="/login">Sign In</Link>
+        <Button asChild size="sm">
+          <Link href="/register">Sign Up</Link>
         </Button>
       </div>
     </nav>

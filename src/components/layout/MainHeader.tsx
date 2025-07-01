@@ -6,9 +6,9 @@ import { UserNav } from "./UserNav";
 import type { NavItem } from "@/lib/types";
 
 const mainNavItems: NavItem[] = [
-  { label: "Generuj", href: "/generate" },
-  { label: "Moje fiszki", href: "/flashcards" },
-  { label: "Sesja nauki", href: "/session" },
+  { label: "Generate", href: "/generate" },
+  { label: "My Cards", href: "/flashcards" },
+  { label: "Study Session", href: "/session" },
 ];
 
 export async function MainHeader() {
@@ -24,7 +24,7 @@ export async function MainHeader() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center justify-between">
+      <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <div className="flex items-center space-x-8">
           <Logo />
           <DesktopNav navItems={mainNavItems} />

@@ -1,64 +1,124 @@
 "use client";
 
-import React from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { resetPasswordSchema, ResetPasswordInput } from "@/lib/schemas/auth";
-import { FormInput } from "@/components/ui/FormInput";
-import { FormButton } from "@/components/ui/FormButton";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import React from "react";
 
 export function ResetPasswordForm() {
   const searchParams = useSearchParams();
-  const accessToken = searchParams.get("access_token") || "";
+  const accessToken = searchParams.get("access_token");
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<ResetPasswordInput>({
+  const form = useForm<ResetPasswordInput>({
     resolver: zodResolver(resetPasswordSchema),
-    defaultValues: { accessToken },
+    defaultValues: {
+      newPassword: "",
+      confirmPassword: "",
+      accessToken: accessToken || "",
+    },
   });
 
-  const onSubmit = async (data: ResetPasswordInput) => {
-    // TODO: Handle reset password submission
-    console.log("Reset password data:", data);
-  };
+  // TODO: Implement server action for password reset
+  function onSubmit(values: ResetPasswordInput) {
+    console.log(values);
+  }
+
+  if (!accessToken) {
+    return (
+      <Card className="mx-auto w-full max-w-lg">
+        <CardHeader>
+          <CardTitle className="text-2xl">Invalid Link</CardTitle>
+          <CardDescription>
+            The password reset link is invalid or has expired.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Link href="/forgot-password">
+            <Button variant="outline" className="w-full">
+              Request a new link
+            </Button>
+          </Link>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
-    <Card>
+    <Card className="mx-auto w-full max-w-lg">
       <CardHeader>
-        <CardTitle>Resetowanie hasła</CardTitle>
+        <CardTitle className="text-2xl">Reset Password</CardTitle>
+        <CardDescription>Enter your new password below.</CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4">
-          <FormInput
-            id="newPassword"
-            label="Nowe hasło"
-            type="password"
-            {...register("newPassword")}
-            error={errors.newPassword?.message?.toString()}
-          />
-          <FormInput
-            id="confirmPassword"
-            label="Potwierdź nowe hasło"
-            type="password"
-            {...register("confirmPassword")}
-            error={errors.confirmPassword?.message?.toString()}
-          />
-          <input type="hidden" {...register("accessToken")} />
-          <FormButton type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Resetowanie..." : "Ustaw nowe hasło"}
-          </FormButton>
-          <p className="text-sm text-center">
-            <Link href="/login" className="text-primary hover:underline">
-              Powrót do logowania
-            </Link>
-          </p>
-        </form>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
+            <FormField
+              control={form.control}
+              name="newPassword"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>New Password</FormLabel>
+                  <FormControl>
+                    <Input type="password" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="confirmPassword"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Confirm New Password</FormLabel>
+                  <FormControl>
+                    <Input type="password" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="accessToken"
+              render={({ field }) => (
+                <FormItem className="hidden">
+                  <FormControl>
+                    <Input type="hidden" {...field} />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            <Button type="submit" className="w-full">
+              Set new password
+            </Button>
+          </form>
+        </Form>
+        <div className="mt-4 text-center text-sm">
+          <Link href="/login" className="underline">
+            Back to login
+          </Link>
+        </div>
       </CardContent>
     </Card>
   );
