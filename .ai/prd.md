@@ -64,7 +64,7 @@ Tytuł: Rejestracja konta
 Opis: Jako nowy użytkownik chcę się zarejestrować, aby mieć dostęp do własnych fiszek i móc korzystać z generowania fiszek przez AI.
 Kryteria akceptacji:
 
-- Formularz rejestracyjny zawiera pola na adres e-mail i hasło.
+- Formularz rejestracyjny zawiera pola na adres e-mail, hasło oraz potwierdzenie hasła.
 - Po poprawnym wypełnieniu formularza i weryfikacji danych konto jest aktywowane.
 - Użytkownik otrzymuje potwierdzenie pomyślnej rejestracji i zostaje zalogowany.
 
@@ -74,7 +74,6 @@ Opis: Jako zarejestrowany użytkownik chcę móc się zalogować, aby mieć dost
 Kryteria akceptacji:
 
 - Logowanie wymaga podania adresu email i hasła.
-- Rejestracja wymaga podania adresu email, hasła i potwierdzenia hasła.
 - Po podaniu prawidłowych danych logowania użytkownik zostaje przekierowany do widoku generowania fiszek.
 - Błędne dane logowania wyświetlają komunikat o nieprawidłowych danych.
 - Dane dotyczące logowania przechowywane są w bezpieczny sposób.

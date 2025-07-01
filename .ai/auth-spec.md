@@ -76,10 +76,10 @@ Wykorzystamy istniejące komponenty, rozbudowując je o logikę integracji.
 
 - **Odzyskiwanie hasła (US-002):**
   1. Użytkownik podaje email w `ForgotPasswordForm` i wysyła formularz.
-  2. Akcja serwerowa `sendPasswordReset` instruuje Supabase do wysłania emaila z linkiem.
+  2. Akcja serwerowa `sendPasswordReset` instruuje Supabase do wysłania emaila z linkiem. Po wywołaniu akcji, formularz powinien wyświetlić użytkownikowi komunikat o pomyślnym wysłaniu instrukcji (ze względów bezpieczeństwa, komunikat powinien być taki sam, niezależnie od tego, czy email istnieje w bazie).
   3. Użytkownik klika w link i trafia na stronę `/reset-password` (z tokenem w URL).
   4. `ResetPasswordForm` pozwala na wprowadzenie i potwierdzenie nowego hasła.
-  5. Akcja serwerowa `updatePassword` aktualizuje hasło w Supabase. Użytkownik jest informowany o sukcesie i może się zalogować.
+  5. Akcja serwerowa `updatePassword` aktualizuje hasło w Supabase. Po pomyślnej aktualizacji, użytkownik jest informowany o sukcesie (np. za pomocą komponentu `toast`), a następnie przekierowywany na stronę logowania, aby mógł użyć nowego hasła.
 
 ---
 
