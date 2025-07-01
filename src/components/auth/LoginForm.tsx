@@ -1,9 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema, LoginInput } from "@/lib/schemas/auth";
+import { login } from "@/lib/actions/auth.actions";
+import { useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -22,8 +25,15 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { FormError } from "@/components/ui/FormError";
 
 export function LoginForm() {
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirectTo");
+
+  const [error, setError] = useState<string | undefined>();
+  const [isPending, startTransition] = useTransition();
+
   const form = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -32,9 +42,15 @@ export function LoginForm() {
     },
   });
 
-  // TODO: Implement server action for login
   function onSubmit(values: LoginInput) {
-    console.log(values);
+    setError(undefined);
+
+    startTransition(async () => {
+      const result = await login(values, redirectTo);
+      if (result?.error) {
+        setError(result.error);
+      }
+    });
   }
 
   return (
@@ -48,6 +64,7 @@ export function LoginForm() {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
+            {error ? <FormError message={error} /> : null}
             <FormField
               control={form.control}
               name="email"
@@ -55,7 +72,11 @@ export function LoginForm() {
                 <FormItem>
                   <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input placeholder="m@example.com" {...field} />
+                    <Input
+                      placeholder="m@example.com"
+                      {...field}
+                      disabled={isPending}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -76,14 +97,18 @@ export function LoginForm() {
                     </Link>
                   </div>
                   <FormControl>
-                    <Input type="password" {...field} />
+                    <Input type="password" {...field} disabled={isPending} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full">
-              Login
+            <Button
+              type="submit"
+              className="w-full cursor-pointer"
+              disabled={isPending}
+            >
+              {isPending ? "Signing in..." : "Login"}
             </Button>
           </form>
         </Form>

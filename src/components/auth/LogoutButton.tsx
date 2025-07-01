@@ -1,32 +1,39 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { createClient } from "@/utils/supabase/client";
+import { useTransition } from "react";
+import { logout } from "@/lib/actions/auth.actions";
+import { isRedirectError } from "@/lib/utils";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Loader2, LogOut } from "lucide-react";
 
 export function LogoutButton() {
-  const router = useRouter();
-  const supabase = createClient();
-  const isLoading = false;
+  const [isPending, startTransition] = useTransition();
 
-  const handleLogout = async () => {
-    try {
-      const { error } = await supabase.auth.signOut();
+  const handleLogout = () => {
+    startTransition(async () => {
+      try {
+        const result = await logout();
 
-      if (error) {
-        toast.error("Błąd podczas wylogowywania");
-        return;
+        if (result?.error) {
+          toast.error(result.error);
+          return;
+        }
+
+        // Success case - redirect will be handled by the server action
+        toast.success("Signed out successfully");
+      } catch (error) {
+        // Next.js redirect() throws a special error that should be ignored
+        if (isRedirectError(error)) {
+          // This is a Next.js redirect, which is expected behavior
+          return;
+        }
+
+        console.error("Logout error:", error);
+        toast.error("An unexpected error occurred");
       }
-
-      toast.success("Wylogowano pomyślnie");
-      router.push("/login");
-      router.refresh();
-    } catch {
-      toast.error("Wystąpił nieoczekiwany błąd");
-    }
+    });
   };
 
   return (
@@ -35,10 +42,10 @@ export function LogoutButton() {
         variant="ghost"
         size="sm"
         onClick={handleLogout}
-        disabled={isLoading}
+        disabled={isPending}
         className="w-full justify-start px-2"
       >
-        {isLoading ? (
+        {isPending ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             Signing out...
