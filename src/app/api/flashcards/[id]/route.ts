@@ -26,7 +26,7 @@ export async function GET(
     try {
         // 2. Authenticate user
         const supabase = await createClient();
-        const authResult = await getAuthenticatedUserId(supabase);
+        const authResult = await getAuthenticatedUserId();
 
         if (authResult.error) {
             return NextResponse.json(
@@ -92,7 +92,7 @@ export async function PUT(
     try {
         // 3. Authenticate user
         const supabase = await createClient();
-        const authResult = await getAuthenticatedUserId(supabase);
+        const authResult = await getAuthenticatedUserId();
 
         if (authResult.error) {
             return NextResponse.json(
@@ -163,7 +163,7 @@ export async function DELETE(
     try {
         // 2. Authenticate user
         const supabase = await createClient();
-        const authResult = await getAuthenticatedUserId(supabase);
+        const authResult = await getAuthenticatedUserId();
 
         if (authResult.error) {
             return NextResponse.json(

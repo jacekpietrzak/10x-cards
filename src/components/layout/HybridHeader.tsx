@@ -7,9 +7,9 @@ import { Button } from "@/components/ui/button";
 import type { PublicNavItem } from "@/lib/types";
 
 const publicNavItems: PublicNavItem[] = [
-  { label: "Funkcje", href: "/#features" },
-  { label: "Cennik", href: "/#pricing" },
-  { label: "O nas", href: "/#about" },
+  { label: "Features", href: "/#features" },
+  { label: "Pricing", href: "/#pricing" },
+  { label: "About Us", href: "/#about" },
 ];
 
 interface HybridHeaderProps {
@@ -19,7 +19,7 @@ interface HybridHeaderProps {
 export function HybridHeader({ user }: HybridHeaderProps) {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center justify-between mx-auto">
+      <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <div className="flex items-center space-x-8 ">
           <Logo />
           {/* Navigation to homepage sections */}
@@ -40,13 +40,13 @@ export function HybridHeader({ user }: HybridHeaderProps) {
           {/* Quick access to main app functions */}
           <div className="hidden lg:flex items-center space-x-2">
             <Button variant="ghost" size="sm" asChild>
-              <Link href="/generate">Generuj</Link>
+              <Link href="/generate">Generate</Link>
             </Button>
             <Button variant="ghost" size="sm" asChild>
-              <Link href="/flashcards">Moje fiszki</Link>
+              <Link href="/flashcards">My Cards</Link>
             </Button>
             <Button variant="ghost" size="sm" asChild>
-              <Link href="/session">Sesja nauki</Link>
+              <Link href="/session">Study Session</Link>
             </Button>
           </div>
 

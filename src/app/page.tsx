@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BrainCircuit, Bot, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -15,20 +16,20 @@ export default function Home() {
       <section className="relative py-20 lg:py-32 bg-gradient-to-b from-background to-muted/50">
         <div className="container mx-auto px-4">
           <div className="text-center max-w-4xl mx-auto">
-            <h1 className="text-4xl lg:text-6xl font-bold tracking-tight mb-6">
-              Twórz fiszki 10x szybciej
-              <span className="text-primary"> z AI</span>
+            <h1 className="flex flex-col items-center text-4xl lg:text-6xl font-bold tracking-tight mb-6">
+              Create Flashcards 10x Faster
+              <span className="text-primary"> with AI</span>
             </h1>
             <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Przekształć dowolny tekst w wysokiej jakości fiszki dzięki
-              sztucznej inteligencji. Ucz się efektywniej i oszczędzaj czas.
+              Transform any text into high-quality flashcards with artificial
+              intelligence. Learn more effectively and save time.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button size="lg" asChild>
-                <Link href="/register">Zacznij za darmo</Link>
+                <Link href="/register">Get Started for Free</Link>
               </Button>
               <Button variant="outline" size="lg" asChild>
-                <Link href="/#features">Dowiedz się więcej</Link>
+                <Link href="/#features">Learn More</Link>
               </Button>
             </div>
           </div>
@@ -40,54 +41,63 @@ export default function Home() {
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold mb-4">
-              Funkcje 10xCards
+              Features of 10xCards
             </h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Wszystko czego potrzebujesz do efektywnej nauki
+              Everything you need for effective learning
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             <Card>
               <CardHeader>
-                <CardTitle>🤖 AI Generation</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Bot size={24} className="text-primary" />
+                  AI Generation
+                </CardTitle>
                 <CardDescription>
-                  Automatyczne generowanie fiszek z dowolnego tekstu
+                  Automatic flashcard generation from any text
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground">
-                  Wklej tekst, a AI stworzy dla Ciebie dopasowane fiszki w
-                  sekundach.
+                  Paste your text, and AI will create tailored flashcards for
+                  you in seconds.
                 </p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader>
-                <CardTitle>🧠 Spaced Repetition</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <BrainCircuit size={24} className="text-primary" />
+                  Spaced Repetition
+                </CardTitle>
                 <CardDescription>
-                  Algorytm FSRS dla optymalnej nauki
+                  FSRS algorithm for optimal learning
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground">
-                  System automatycznie dostosowuje harmonogram powtórek do
-                  Twoich postępów.
+                  The system automatically adjusts the review schedule to your
+                  progress.
                 </p>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader>
-                <CardTitle>✏️ Personalizacja</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Pencil size={24} className="text-primary" />
+                  Personalization
+                </CardTitle>
                 <CardDescription>
-                  Edytuj i dostosowuj fiszki do siebie
+                  Edit and customize flashcards to your needs
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground">
-                  Modyfikuj wygenerowane fiszki lub twórz własne od podstaw.
+                  Modify generated flashcards or create your own from scratch.
                 </p>
               </CardContent>
             </Card>
@@ -100,30 +110,30 @@ export default function Home() {
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold mb-4">
-              Prosty cennik
+              Simple Pricing
             </h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Rozpocznij za darmo, rozwijaj się razem z nami
+              Start for free, grow with us
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             <Card>
               <CardHeader>
-                <CardTitle className="text-2xl">Darmowy</CardTitle>
+                <CardTitle className="text-2xl">Free</CardTitle>
                 <CardDescription>
-                  <span className="text-3xl font-bold">0 zł</span> / miesiąc
+                  <span className="text-3xl font-bold">$0</span> / month
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <ul className="space-y-2 text-sm">
-                  <li>✓ 50 fiszek miesięcznie</li>
-                  <li>✓ AI generowanie</li>
-                  <li>✓ Podstawowy algorytm powtórek</li>
-                  <li>✓ Export do plików</li>
+                  <li>✓ 50 flashcards per month</li>
+                  <li>✓ AI generation</li>
+                  <li>✓ Basic repetition algorithm</li>
+                  <li>✓ Export to files</li>
                 </ul>
                 <Button className="w-full" variant="outline" asChild>
-                  <Link href="/register">Rozpocznij za darmo</Link>
+                  <Link href="/register">Get Started</Link>
                 </Button>
               </CardContent>
             </Card>
@@ -132,19 +142,19 @@ export default function Home() {
               <CardHeader>
                 <CardTitle className="text-2xl">Pro</CardTitle>
                 <CardDescription>
-                  <span className="text-3xl font-bold">29 zł</span> / miesiąc
+                  <span className="text-3xl font-bold">$7</span> / month
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <ul className="space-y-2 text-sm">
-                  <li>✓ Nieograniczone fiszki</li>
-                  <li>✓ Zaawansowane AI modele</li>
-                  <li>✓ FSRS algorytm</li>
-                  <li>✓ Statystyki i analityki</li>
-                  <li>✓ Priorytetowy support</li>
+                  <li>✓ Unlimited flashcards</li>
+                  <li>✓ Advanced AI models</li>
+                  <li>✓ FSRS algorithm</li>
+                  <li>✓ Statistics and analytics</li>
+                  <li>✓ Priority support</li>
                 </ul>
                 <Button className="w-full" asChild>
-                  <Link href="/register">Wypróbuj Pro</Link>
+                  <Link href="/register">Try Pro</Link>
                 </Button>
               </CardContent>
             </Card>
@@ -156,31 +166,32 @@ export default function Home() {
       <section id="about" className="py-20 bg-background">
         <div className="container mx-auto px-4">
           <div className="text-center max-w-4xl mx-auto">
-            <h2 className="text-3xl lg:text-4xl font-bold mb-6">O 10xCards</h2>
+            <h2 className="text-3xl lg:text-4xl font-bold mb-6">
+              About 10xCards
+            </h2>
             <p className="text-lg text-muted-foreground mb-8">
-              Jesteśmy zespołem pasjonatów edukacji i technologii, którzy
-              wierzą, że sztuczna inteligencja może rewolucjonizować sposób, w
-              jaki się uczymy. Nasza misja to sprawienie, aby tworzenie wysokiej
-              jakości materiałów edukacyjnych było szybkie, łatwe i dostępne dla
-              każdego.
+              We are a team of education and technology enthusiasts who believe
+              that artificial intelligence can revolutionize the way we learn.
+              Our mission is to make creating high-quality educational materials
+              fast, easy, and accessible to everyone.
             </p>
             <div className="grid md:grid-cols-3 gap-8 mt-12">
               <div className="text-center">
                 <div className="text-3xl font-bold text-primary mb-2">10x</div>
                 <div className="text-sm text-muted-foreground">
-                  szybsze tworzenie fiszek
+                  faster flashcard creation
                 </div>
               </div>
               <div className="text-center">
                 <div className="text-3xl font-bold text-primary mb-2">98%</div>
                 <div className="text-sm text-muted-foreground">
-                  zadowoleni użytkownicy
+                  user satisfaction
                 </div>
               </div>
               <div className="text-center">
                 <div className="text-3xl font-bold text-primary mb-2">50k+</div>
                 <div className="text-sm text-muted-foreground">
-                  wygenerowanych fiszek
+                  flashcards generated
                 </div>
               </div>
             </div>
@@ -192,13 +203,14 @@ export default function Home() {
       <section className="py-20 bg-primary">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl lg:text-4xl font-bold text-primary-foreground mb-6">
-            Gotowy na 10x szybszą naukę?
+            Ready for 10x faster learning?
           </h2>
           <p className="text-xl text-primary-foreground/90 mb-8 max-w-2xl mx-auto">
-            Dołącz do tysięcy użytkowników, którzy już odkryli moc AI w nauce
+            Join thousands of users who have already discovered the power of AI
+            in learning.
           </p>
           <Button size="lg" variant="secondary" asChild>
-            <Link href="/register">Zacznij już teraz</Link>
+            <Link href="/register">Get Started Now</Link>
           </Button>
         </div>
       </section>

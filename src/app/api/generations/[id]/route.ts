@@ -68,11 +68,11 @@ export async function GET(
     context: { params: Promise<{ id: string }> },
 ) {
     try {
-        // 1. Tworzenie Supabase Server Client
         const supabase = await createClient();
 
-        // 2. Autoryzacja użytkownika
-        const authResult = await getAuthenticatedUserId(supabase);
+        // Authenticate user
+        const authResult = await getAuthenticatedUserId();
+
         if (authResult.error) {
             return NextResponse.json(
                 { error: authResult.error.message },

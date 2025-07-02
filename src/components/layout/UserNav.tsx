@@ -44,7 +44,7 @@ export function UserNav({ user }: UserNavProps) {
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
           <Link href="/profile" className="cursor-pointer">
-            Profil
+            Profile
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />

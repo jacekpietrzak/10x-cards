@@ -1,9 +1,9 @@
 export const metadata = {
-  title: "10xCards Dashboard",
-  description: "Manage your flashcards and study sessions",
+  title: "10xCards",
+  description: "Welcome to 10xCards. Login or register to start.",
 };
 
-export default function AuthLayout({
+export default function PublicLayout({
   children,
 }: {
   children: React.ReactNode;

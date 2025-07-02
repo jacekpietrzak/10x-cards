@@ -21,7 +21,7 @@ export default async function ProfilePage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-2xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6">Profil użytkownika</h1>
+        <h1 className="text-3xl font-bold mb-6">User Profile</h1>
 
         <Card>
           <CardHeader>

@@ -1,225 +1,160 @@
-# Specyfikacja modułu autoryzacji i uwierzytelniania – 10xCards
+# Specyfikacja Techniczna: Moduł Uwierzytelniania Użytkowników
 
-> Dokumentacja opisuje architekturę funkcjonalności rejestracji, logowania, wylogowywania oraz odzyskiwania hasła użytkowników zgodnie z wymaganiami US-001 i US-002 z pliku PRD oraz technologicznym stosie z plików tech-stac.md i ui-plan.md.
+## Wprowadzenie
 
----
+Niniejszy dokument opisuje szczegółową architekturę i plan wdrożenia funkcjonalności uwierzytelniania użytkowników (rejestracja, logowanie, wylogowywanie, odzyskiwanie hasła) w aplikacji 10xCards. Rozwiązanie opiera się na tech-stacku projektu, w skład którego wchodzą Next.js 15 (App Router), React 19, TypeScript, Supabase (Auth, DB) oraz biblioteka komponentów Shadcn/ui.
 
-## 1. ARCHITEKTURA INTERFEJSU UŻYTKOWNIKA
-
-### 1.1 Layouty i nawigacja
-
-- **AuthLayout** (src/app/(auth)/layout.tsx)
-
-  - Domyślny layout dla stron: `/login`, `/register`, `/forgot-password`, `/reset-password`
-  - Minimalna nawigacja: logo, krótka informacja, odnośnik powrotny do /login lub /register
-  - Brak bocznej nawigacji głównej, wyraźne CTA
-
-- **MainLayout** (src/app/layout.tsx)
-  - Layout dla chronionych stron: `/generate`, `/flashcards`, `/session`, `/profile`
-  - Górne menu z odnośnikami: Generowanie fiszek, Moje fiszki, Sesja nauki, Profil, Wyloguj
-  - Wersja mobilna: hamburger menu (z komponentem shadcn/ui)
-  - Warunkowe renderowanie nawigacji: jeśli brak sesji, przekierowanie do `/login`
-
-### 1.2 Strony i komponenty
-
-#### 1.2.1 `/register` – Rejestracja
-
-- **Strona**: src/app/register/page.tsx (komponent klienta – `use client`)
-- **Formularz**: `RegisterForm` (src/components/auth/RegisterForm.tsx)
-  - Pola: `email` (input type="email"), `password` (type="password"), `confirmPassword` (type="password")
-  - Walidacja z użyciem Zod + react-hook-form:
-    - `email`: poprawny format
-    - `password`: min. 8 znaków, wielkie litery, liczba (opcjonalnie)
-    - `confirmPassword`: musi być zgodne z `password`
-  - Komunikaty błędów pod polami (FormError) oraz toast przy błędzie sieci/serwera
-  - Przyciski: "Zarejestruj" (shadcn/ui Button), wskaźnik ładowania
-  - Po sukcesie: użytkownik zostaje automatycznie zalogowany, sesja jest ustawiona, a następnie przekierowany do `/generate` z komunikatem powitalnym
-
-#### 1.2.2 `/login` – Logowanie
-
-- **Strona**: src/app/login/page.tsx (`use client`)
-- **Formularz**: `LoginForm` (src/components/auth/LoginForm.tsx)
-  - Pola: `email`, `password`
-  - Walidacja z Zod + react-hook-form (podstawowa)
-  - Komunikaty: nieprawidłowe dane logowania, błąd sieci
-  - Dodatki: link do `/forgot-password`, przycisk "Zaloguj"
-  - Po sukcesie: redirect do `/generate`
-
-#### 1.2.3 `/forgot-password` – Odzyskiwanie hasła
-
-- **Strona**: src/app/forgot-password/page.tsx (`use client`)
-- **Formularz**: `ForgotPasswordForm` (src/components/auth/ForgotPasswordForm.tsx)
-  - Pole: `email`
-  - Walidacja formatu email
-  - Po wysłaniu: komunikat o wysłaniu linku do resetu
-  - Obsługa błędów: email nieznaleziony, błąd serwera
-
-#### 1.2.4 `/reset-password` – Ustawienie nowego hasła
-
-- **Strona**: src/app/reset-password/page.tsx (`use client`)
-  - Odczyt tokenu `access_token` z query string
-- **Formularz**: `ResetPasswordForm` (src/components/auth/ResetPasswordForm.tsx)
-  - Pola: `newPassword`, `confirmPassword`
-  - Walidacja: min. 8 znaków, pola zgodne, obecność tokenu
-  - Po sukcesie: redirect do `/login` z komunikatem o pomyślnej zmianie hasła
-  - Obsługa błędów: nieprawidłowy lub przeterminowany token, błąd serwera
-
-### 1.3 Komponenty wspólne
-
-- `FormInput`, `FormButton`, `FormError` w `src/components/ui` – dostosowane do shadcn/ui
-- `ToastNotification` dla globalnych komunikatów (sukces/błąd)
-- `PasswordMeter` (opcjonalnie) do oceny siły hasła
-
-### 1.4 Obsługa walidacji i komunikatów
-
-- Zdefiniowanie schematów Zod w `src/lib/schemas/auth.ts`
-- React-hook-form integracja z Zod
-- Inline error: pod polem formularza
-- Global error: toast lub banner w górnej części formularza
-- Loading state: dezaktywacja przycisków + spinner
-
-### 1.5 Kluczowe scenariusze UX
-
-1. Użytkownik bez konta → `/register` → poprawne formularze → użytkownik jest automatycznie zalogowany i przekierowany do `/generate`
-2. Użytkownik z kontem → `/login` → błędne dane → inline error → ponowienie
-3. Użytkownik zapomniał hasła → `/forgot-password` → wprowadza email → otrzymuje maila → klika link → `/reset-password` → nowy password → powrót do `/login`
-4. Po zalogowaniu → `MainLayout` + dostęp do chronionych tras → wylogowanie
+Architektura została zaprojektowana w zgodzie z wymaganiami funkcjonalnymi z dokumentu PRD (`.ai/prd.md`), ze szczególnym uwzględnieniem historyjek użytkownika US-001, US-002 oraz US-009.
 
 ---
 
-## 2. LOGIKA BACKENDOWA
+## 1. Architektura Interfejsu Użytkownika (Frontend)
 
-### 2.1 Modele danych i typy TypeScript
+Logika frontendu zostanie oparta o Next.js App Router, z wyraźnym podziałem na komponenty klienckie (Client Components) do obsługi interakcji i formularzy oraz komponenty serwerowe (Server Components) do renderowania widoków i logiki nawigacji.
 
-- Brak niestandardowej tabeli użytkownika – korzystamy z Supabase Auth
-- Definicje typów odpowiedzi i błędów w `src/lib/types/auth.ts`:
-  ```typescript
-  export type AuthResponse = {
-    data?: any;
-    error?: {
-      message: string;
-      status: number;
-    };
-  };
-  ```
+### 1.1. Struktura Stron i Layoutów
 
-### 2.2 Endpoints API (Route Handlers)
+Aby poprawnie oddzielić ścieżki publiczne od prywatnych, wprowadzimy następujące zmiany w strukturze `src/app`:
 
-Każdy endpoint w katalogu `src/app/api/auth/[action]/route.ts`:
+- **Grupa `(public)`:** Nowa grupa tras dla stron dostępnych bez logowania.
 
-- POST `/api/auth/register`
+  - `src/app/(public)/login/page.tsx`
+  - `src/app/(public)/register/page.tsx`
+  - `src/app/(public)/forgot-password/page.tsx`
+  - `src/app/(public)/reset-password/page.tsx`
+  - **Layout:** `src/app/(public)/layout.tsx` będzie renderować `PublicHeader`, zawierający linki do logowania i rejestracji.
 
-  - Body: `{ email: string; password: string }`
-  - Logika: walidacja Zod → `supabase.auth.signUp` → obsługa błędów → 200/400/500
+- **Grupa `(auth)`:** Istniejąca grupa dla stron wymagających autentykacji.
 
-- POST `/api/auth/login`
+  - `src/app/(auth)/generate/page.tsx` (strona docelowa po logowaniu)
+  - `src/app/(auth)/flashcards/page.tsx`
+  - `src/app/(auth)/profile/page.tsx`
+  - **Layout:** `src/app/(auth)/layout.tsx` będzie renderować `MainHeader` z nawigacją użytkownika (`UserNav`) i przyciskiem wylogowania.
 
-  - Body: `{ email: string; password: string }`
-  - Logika: walidacja Zod → `supabase.auth.signInWithPassword` → ustawienie cookie → 200/401/500
+- **Middleware (`middleware.ts` na poziomie głównym):**
+  - Będzie pełnił rolę strażnika (gatekeeper).
+  - Dla wszystkich zapytań do ścieżek w grupie `(auth)`, sprawdzi istnienie aktywnej sesji użytkownika.
+  - W przypadku braku sesji, przekieruje użytkownika na stronę `/login`.
+  - W przypadku, gdy zalogowany użytkownik spróbuje wejść na `/login` lub `/register`, przekieruje go na `/generate`.
+  - Będzie odpowiedzialny za odświeżanie tokenów sesji przy użyciu pakietu `@supabase/ssr`.
 
-- POST `/api/auth/logout`
+### 1.2. Komponenty Interfejsu Użytkownika
 
-  - Body: pusty
-  - Logika: `supabase.auth.signOut()` → usunięcie cookie → 200/500
+Wykorzystamy istniejące komponenty, rozbudowując je o logikę integracji.
 
-- POST `/api/auth/forgot-password`
+- **Formularze (Client Components):**
 
-  - Body: `{ email: string }`
-  - Logika: walidacja → `supabase.auth.resetPasswordForEmail` → 200/404/500
+  - `src/components/auth/LoginForm.tsx`
+  - `src/components/auth/RegisterForm.tsx`
+  - `src/components/auth/ForgotPasswordForm.tsx`
+  - `src/components/auth/ResetPasswordForm.tsx`
+  - **Odpowiedzialność:** Zarządzanie stanem formularza (wartości pól, stan ładowania, błędy), walidacja po stronie klienta (z użyciem `zod` i `react-hook-form`) w celu natychmiastowego feedbacku.
+  - **Integracja:** Będą wywoływać dedykowane akcje serwerowe (Server Actions) do obsługi logiki autentykacji. Nie będą bezpośrednio komunikować się z API Supabase.
+  - **Obsługa błędów:** Wyświetlanie komunikatów o błędach zwróconych przez Server Actions w komponencie `FormError`.
 
-- POST `/api/auth/reset-password`
-  - Body: `{ access_token: string; newPassword: string }`
-  - Logika: walidacja → `supabase.auth.updateUser({ password: newPassword })` (z tokenem w nagłówku) → 200/400/500
+- **Nagłówki i Nawigacja:**
+  - `src/components/layout/ConditionalHeader.tsx`: Komponent serwerowy, który na podstawie statusu sesji (pobranego po stronie serwera) zdecyduje o wyrenderowaniu `PublicHeader` lub `MainHeader`.
+  - `src/components/layout/UserNav.tsx`: Wyświetli awatar/email użytkownika i menu z linkiem do profilu oraz komponentem `LogoutButton`.
+  - `src/components/auth/LogoutButton.tsx`: Prosty komponent kliencki, który wywoła akcję serwerową `logout()` i przekieruje użytkownika.
 
-### 2.3 Walidacja i transformacja danych
+### 1.3. Scenariusze Użytkownika
 
-- Schematy Zod w `src/lib/schemas/auth.ts`
-- Middleware obsługujące błędy walidacji: zwraca 400 z opisem problemu
+- **Rejestracja (US-001):**
 
-### 2.4 Obsługa wyjątków i kody HTTP
+  1. Użytkownik wypełnia `RegisterForm`.
+  2. Po stronie klienta następuje walidacja (np. format email, siła hasła, zgodność haseł).
+  3. Po kliknięciu "Zarejestruj" wywoływana jest akcja serwerowa `register`.
+  4. W przypadku sukcesu (konto utworzone w Supabase), użytkownik jest automatycznie logowany, a **akcja serwerowa `register`** przekierowuje go na stronę `/generate`.
+  5. W przypadku błędu (np. email zajęty), akcja zwraca błąd, który `RegisterForm` wyświetla w `FormError`.
 
-- 400 Bad Request – niepoprawne dane wejściowe
-- 401 Unauthorized – brak sesji lub nieprawidłowe dane logowania
-- 404 Not Found – email nie istnieje przy resetowaniu
-- 500 Internal Server Error – niespodziewane błędy
-- Format odpowiedzi: `{ success: boolean; message?: string; error?: string }`
+- **Logowanie (US-002):**
 
-### 2.5 Middleware ochrony tras
+  1. Użytkownik wypełnia `LoginForm`.
+  2. Kliknięcie "Zaloguj" wywołuje akcję serwerową `login`.
+  3. W przypadku sukcesu (poprawne dane), tworzona jest sesja (zapisywana w cookies), a **akcja serwerowa `login`** przekierowuje go na `/generate`.
+  4. W przypadku błędu (nieprawidłowe dane), `LoginForm` wyświetla stosowny komunikat.
 
-- `middleware.ts` w katalogu root Next.js
-- Ochrona ścieżek zaczynających się od `/generate`, `/flashcards`, `/session`, `/profile`
-- Przekierowanie do `/login` dla niezweryfikowanych użytkowników
-
----
-
-## 3. SYSTEM AUTENTYKACJI (Supabase Auth)
-
-### 3.1 Konfiguracja klienta
-
-- Biblioteki: `@supabase/supabase-js`, `@supabase/auth-helpers-nextjs`, `@supabase/auth-helpers-react`
-- Plik: `src/lib/services/supabaseClient.ts`
-  ```typescript
-  import { createClient } from "@supabase/supabase-js";
-  export const supabaseClient = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-  ```
-- Plik: `src/lib/services/supabaseServerClient.ts` (dla server components i route handlers)
-
-- Zmienne środowiskowe w `.env.local`:
-  ```dotenv
-  NEXT_PUBLIC_SUPABASE_URL=...
-  NEXT_PUBLIC_SUPABASE_ANON_KEY=...
-  SUPABASE_SERVICE_ROLE_KEY=... # do operacji reset-password
-  ```
-
-### 3.2 Proces rejestracji
-
-1. Frontend wysyła żądanie POST do `/api/auth/register`
-2. Route handler wywołuje `supabase.auth.signUp`
-3. `supabase.auth.signUp` zwraca obiekt z user i session → sesja jest ustawiana w cookie i kontekście aplikacji
-4. Frontend przekierowuje użytkownika do `/generate` z komunikatem powitalnym
-
-### 3.3 Proces logowania
-
-1. Frontend POST `/api/auth/login`
-2. Route handler `supabase.auth.signInWithPassword`
-3. Ustawienie cookie sesji (Govt JWT)
-4. Przekierowanie do chronionej strony
-
-### 3.4 Wylogowanie
-
-- Wywołanie `supabase.auth.signOut()` w endpoint `/api/auth/logout` lub w client-side
-- Usunięcie sesji i redirect do `/login`
-
-### 3.5 Odzyskiwanie hasła
-
-1. Klient POST `/api/auth/forgot-password`
-2. Supabase wysyła link resetu (z wygenerowanym tokenem)
-3. Użytkownik klika link → `/reset-password?access_token=...`
-4. Formularz ResetPasswordForm → POST `/api/auth/reset-password` z tokenem i nowym hasłem
-5. Supabase `updateUser` z tokenem → hasło zmienione
-
-### 3.6 Ochrona sesji w aplikacji
-
-- W `layout.tsx` (MainLayout) opakowanie `SessionContextProvider`
-- W server components: `createServerComponentSupabaseClient({ headers, cookies })` do pobierania sesji i usera
-- W client components: `useSession`, `useSupabaseClient`
-- Middleware Next.js: automatyczne przekierowania dla nieautoryzowanych
-
-### 3.7 Moduły i serwisy
-
-- `src/lib/services/authService.ts`:
-  ```typescript
-  export const register = (data) => fetch('/api/auth/register', ...);
-  export const login = (data) => fetch('/api/auth/login', ...);
-  // itd.
-  ```
-- `src/lib/schemas/auth.ts` – definicje Zod
-- `src/components/auth/*Form.tsx` – wrappery komponentów formularzy
-- `src/app/api/auth/*/route.ts` – route handlers
+- **Odzyskiwanie hasła (US-002):**
+  1. Użytkownik podaje email w `ForgotPasswordForm` i wysyła formularz.
+  2. Akcja serwerowa `sendPasswordReset` instruuje Supabase do wysłania emaila z linkiem. Po wywołaniu akcji, formularz powinien wyświetlić użytkownikowi komunikat o pomyślnym wysłaniu instrukcji (ze względów bezpieczeństwa, komunikat powinien być taki sam, niezależnie od tego, czy email istnieje w bazie).
+  3. Użytkownik klika w link i trafia na stronę `/reset-password` (z tokenem w URL).
+  4. `ResetPasswordForm` pozwala na wprowadzenie i potwierdzenie nowego hasła.
+  5. Akcja serwerowa `updatePassword` aktualizuje hasło w Supabase. Po pomyślnej aktualizacji, użytkownik jest informowany o sukcesie (np. za pomocą komponentu `toast`), a następnie przekierowywany na stronę logowania, aby mógł użyć nowego hasła.
 
 ---
 
-_Specyfikacja gotowa do implementacji w kodzie._
+## 2. Logika Backendowa
+
+Zamiast tradycyjnych endpointów API w `src/app/api`, wykorzystamy **Next.js Server Actions**, aby uprościć architekturę i zwiększyć bezpieczeństwo.
+
+### 2.1. Server Actions
+
+Wszystkie akcje związane z autentykacją znajdą się w nowym pliku: `src/lib/actions/auth.actions.ts`.
+
+- `login(formData: FormData)`:
+
+  - Waliduje dane wejściowe przy użyciu schemy Zod z `src/lib/schemas/auth.ts`.
+  - Tworzy serwerowego klienta Supabase.
+  - Wywołuje `supabase.auth.signInWithPassword()`.
+  - W przypadku błędu, zwraca obiekt `{ error: 'Nieprawidłowe dane logowania.' }`.
+  - W przypadku sukcesu, wywołuje `revalidatePath` i `redirect`.
+
+- `register(formData: FormData)`:
+
+  - Waliduje dane wejściowe (w tym sprawdzenie, czy hasła są identyczne).
+  - Wywołuje `supabase.auth.signUp()`.
+  - Obsługuje błąd, gdy email jest już zajęty.
+  - Po sukcesie, przekierowuje zalogowanego użytkownika.
+
+- `logout()`:
+
+  - Wywołuje `supabase.auth.signOut()`.
+  - Przekierowuje na stronę główną (`/`).
+
+- `sendPasswordReset(formData: FormData)`:
+
+  - Waliduje email.
+  - Wywołuje `supabase.auth.resetPasswordForEmail()`, podając URL do strony resetowania hasła w opcjach.
+
+- `updatePassword(formData: FormData)`:
+  - Waliduje nowe hasło.
+  - Używa sesji (z odczytanego tokena w URL) do zaktualizowania hasła użytkownika przez `supabase.auth.updateUser()`.
+
+### 2.2. Modele Danych i Walidacja
+
+Źródłem prawdy dla walidacji będą schematy Zod w `src/lib/schemas/auth.ts`.
+
+- `LoginSchema`: `email` (z walidacją formatu), `password` (z min. długością).
+- `RegisterSchema`: `email`, `password`, `confirmPassword`. Zostanie dodana reguła `.refine()` do sprawdzania zgodności haseł.
+
+Schematy te będą używane zarówno w komponentach klienckich (z `react-hook-form`), jak i w Server Actions do walidacji serwerowej.
+
+### 2.3. Obsługa Wyjątków
+
+Każda akcja serwerowa będzie opakowana w blok `try...catch`. Błędy rzucane przez Supabase (`AuthApiError`) będą przechwytywane i mapowane na zrozumiałe dla użytkownika komunikaty, które następnie będą zwracane jako część obiektu odpowiedzi i wyświetlane w formularzu.
+
+---
+
+## 3. System Autentykacji (Supabase Auth)
+
+Sercem systemu będzie usługa Supabase Auth, zintegrowana z Next.js za pomocą oficjalnego pakietu `@supabase/ssr`.
+
+### 3.1. Konfiguracja Supabase
+
+- **Zmienne środowiskowe:** Plik `.env.local` musi zawierać klucze `NEXT_PUBLIC_SUPABASE_URL` i `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+- **Szablony Email:** W panelu Supabase należy skonfigurować szablon "Reset Password", aby link w nim zawarty kierował do `https://<domena-aplikacji>/reset-password`.
+- **Potwierdzenie Email:** Zgodnie z US-001, który zakłada natychmiastowe zalogowanie po rejestracji, opcja "Secure email confirmation" w panelu Supabase Auth zostanie **wyłączona** dla MVP.
+
+### 3.2. Integracja z Next.js (@supabase/ssr)
+
+Wykorzystamy istniejące pliki `utils` do obsługi klienta Supabase:
+
+- `src/utils/supabase/client.ts`: Używa `createBrowserClient()` do stworzenia instancji Supabase po stronie przeglądarki.
+- `src/utils/supabase/server.ts`: Używa `createServerClient()` do stworzenia instancji w komponentach serwerowych i akcjach serwerowych. Klient ten operuje na `cookies`.
+- `src/utils/supabase/middleware.ts`: Używa `createMiddlewareClient()` w głównym `middleware.ts` do zarządzania sesją (odczyt, zapis, odświeżanie tokena) w kontekście każdego zapytania HTTP.
+
+### 3.3. Dostęp do Danych i Row Level Security (RLS)
+
+- Opisana architektura jest fundamentem pod wdrożenie RLS, co jest kluczowe dla spełnienia wymagania US-009 (prywatność danych).
+- Po zalogowaniu, `id` użytkownika z Supabase (`auth.uid()`) będzie dostępne w kontekście zapytań do bazy danych.
+- Należy utworzyć nowe migracje SQL, które włączą RLS dla tabel `flashcards`, `generations` itd. i dodadzą polityki (policies) zapewniające, że operacje `SELECT`, `INSERT`, `UPDATE`, `DELETE` są możliwe tylko dla wierszy, gdzie `user_id` zgadza się z `auth.uid()`. To uniemożliwi jednemu użytkownikowi dostęp do danych innego.
