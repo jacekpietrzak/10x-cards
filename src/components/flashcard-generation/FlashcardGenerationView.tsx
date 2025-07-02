@@ -144,7 +144,7 @@ export function FlashcardGenerationView() {
 
   return (
     <main
-      className="container mx-auto py-8"
+      className="container mx-auto"
       role="main"
       aria-label="Flashcard Generation"
     >

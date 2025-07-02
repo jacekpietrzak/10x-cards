@@ -14,7 +14,7 @@ export default function SessionPage() {
   // Loading state
   if (state.sessionState === "loading") {
     return (
-      <div className="container mx-auto max-w-4xl p-6">
+      <div className="container mx-auto max-w-4xl">
         <Card>
           <CardHeader>
             <CardTitle>Ładowanie sesji nauki...</CardTitle>
@@ -36,7 +36,7 @@ export default function SessionPage() {
   // Error state
   if (state.sessionState === "error") {
     return (
-      <div className="container mx-auto max-w-4xl p-6">
+      <div className="container mx-auto max-w-4xl">
         <Card>
           <CardHeader>
             <CardTitle>Błąd podczas ładowania sesji</CardTitle>
