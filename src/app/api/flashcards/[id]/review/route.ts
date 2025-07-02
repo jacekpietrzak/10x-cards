@@ -45,9 +45,10 @@ export async function PUT(
     const reviewData = bodyParse.data;
 
     try {
-        // 3. Authenticate user
         const supabase = await createClient();
-        const authResult = await getAuthenticatedUserId(supabase);
+
+        // Authenticate user
+        const authResult = await getAuthenticatedUserId();
 
         if (authResult.error) {
             return NextResponse.json(

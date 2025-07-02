@@ -42,7 +42,7 @@ export async function POST(request: Request) {
         const command: GenerateFlashcardsCommand = parsed.data;
         const supabase = await createClient();
 
-        const authResult = await getAuthenticatedUserId(supabase);
+        const authResult = await getAuthenticatedUserId();
         if (authResult.error) {
             return NextResponse.json(
                 { error: authResult.error.message },
@@ -132,7 +132,7 @@ export async function GET(request: NextRequest) {
         const supabase = await createClient();
 
         // Authenticate user
-        const authResult = await getAuthenticatedUserId(supabase);
+        const authResult = await getAuthenticatedUserId();
         if (authResult.error) {
             return NextResponse.json(
                 { error: authResult.error.message },
