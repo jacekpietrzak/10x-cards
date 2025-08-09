@@ -46,10 +46,10 @@
 - **Testing**
   - Vitest (Unit & Integration tests)
   - React Testing Library (Component testing)
-  - Playwright (E2E tests)
-  - Storybook (Component documentation)
-  - MSW (API mocking)
-  - Testcontainers (Database testing)
+  - Playwright (E2E tests - Chromium only)
+  - MSW (Mock Service Worker for API mocking)
+  - @faker-js/faker (Test data generation)
+  - @testing-library/jest-dom (Custom matchers)
 
 ---
 
@@ -81,11 +81,26 @@ npm run dev
 
 _Open your browser at http://localhost:3000_
 
+### Running Tests
+
+```bash
+# Run unit tests
+npm run test
+
+# Run E2E tests (requires dev server running)
+npm run test:e2e
+
+# Generate coverage report
+npm run test:coverage
+```
+
 ---
 
 ## Available Scripts
 
 In the project directory, you can run:
+
+### Development
 
 - `npm run dev`  
   Starts Next.js in development mode (with TurboPack).
@@ -96,6 +111,8 @@ In the project directory, you can run:
 - `npm run start`  
   Starts the production server after build.
 
+### Code Quality
+
 - `npm run lint`  
   Runs ESLint to check for code quality issues.
 
@@ -104,6 +121,29 @@ In the project directory, you can run:
 
 - `npm run format`  
   Formats the code using Prettier.
+
+### Testing
+
+- `npm run test`  
+  Runs unit tests with Vitest.
+
+- `npm run test:ui`  
+  Opens Vitest UI for interactive test exploration.
+
+- `npm run test:watch`  
+  Runs tests in watch mode for development.
+
+- `npm run test:coverage`  
+  Generates test coverage report.
+
+- `npm run test:e2e`  
+  Runs end-to-end tests with Playwright.
+
+- `npm run test:e2e:ui`  
+  Opens Playwright UI for interactive E2E test debugging.
+
+- `npm run test:e2e:debug`  
+  Runs E2E tests in debug mode.
 
 ---
 
