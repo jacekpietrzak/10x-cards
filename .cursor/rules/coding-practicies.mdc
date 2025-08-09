@@ -1,8 +1,7 @@
 ---
-description: 
-globs: 
 alwaysApply: true
 ---
+
 ## CODING_PRACTICES
 
 ### Guidelines for STATIC_ANALYSIS
@@ -35,6 +34,3 @@ alwaysApply: true
 - Include issue references in commit messages to link changes to requirements
 - Use breaking change footer (!: or BREAKING CHANGE:) to clearly mark incompatible changes
 - Configure commitlint to automatically enforce conventional commit format
-
-
-

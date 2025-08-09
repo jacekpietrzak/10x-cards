@@ -3,6 +3,7 @@ description:
 globs: **/*.tsx
 alwaysApply: false
 ---
+
 ### Guidelines for React
 
 #### React Coding Standards
@@ -17,6 +18,7 @@ alwaysApply: false
 - Use useTransition for non-urgent state updates to keep the UI responsive
 
 Key Principles
+
 - Use functional, declarative programming. Avoid classes.
 - Use descriptive variable names with auxiliary verbs (e.g., isLoading, hasError).
 - Favor named exports for components.
@@ -50,20 +52,21 @@ Key Principles
   - Requires client-side JavaScript functionality
 
 Example of a Client Component:
-```typescript
-'use client'
 
-import { useState } from 'react'
+```typescript
+"use client";
+
+import { useState } from "react";
 
 export default function Counter() {
-  const [count, setCount] = useState(0)
-  
+  const [count, setCount] = useState(0);
+
   return (
     <div>
       <p>Count: {count}</p>
       <button onClick={() => setCount(count + 1)}>Increment</button>
     </div>
-  )
+  );
 }
 ```
 
@@ -76,4 +79,3 @@ export default function Counter() {
   - Wrap them in a new Client Component if they need to be used in Server Components
 - For better performance, prefer keeping layouts and static UI elements as Server Components
 - Only mark components as 'use client' when they actually need client-side interactivity
-- 

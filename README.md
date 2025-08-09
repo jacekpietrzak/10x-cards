@@ -43,6 +43,14 @@
   - GitHub Actions
   - Vercel
 
+- **Testing**
+  - Vitest (Unit & Integration tests)
+  - React Testing Library (Component testing)
+  - Playwright (E2E tests)
+  - Storybook (Component documentation)
+  - MSW (API mocking)
+  - Testcontainers (Database testing)
+
 ---
 
 ## Getting Started Locally

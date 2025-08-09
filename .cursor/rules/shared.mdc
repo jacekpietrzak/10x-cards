@@ -1,11 +1,12 @@
 ---
-description: 
-globs: 
+description:
+globs:
 alwaysApply: true
 ---
+
 # AI Rules for 10xCards
 
-10xCards is a web application that enables the automatic generation of flashcards using artificial intelligence. The aim of the project is to significantly speed up and simplify the process of creating fishes, enabling users to quickly transform the text they enter (copy-paste) into high-quality flashcards for learning. 
+10xCards is a web application that enables the automatic generation of flashcards using artificial intelligence. The aim of the project is to significantly speed up and simplify the process of creating fishes, enabling users to quickly transform the text they enter (copy-paste) into high-quality flashcards for learning.
 
 ## Tech Stack
 
@@ -46,6 +47,4 @@ When modifying the directory structure, always update this section.
 - Avoid unnecessary else statements; use if-return pattern instead.
 - Use guard clauses to handle preconditions and invalid states early.
 - Implement proper error logging and user-friendly error messages.
-
-
 - Consider using custom error types or error factories for consistent error handling.

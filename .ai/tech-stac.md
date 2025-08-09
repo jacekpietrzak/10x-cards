@@ -25,4 +25,22 @@ CI/CD and Hosting:
 - Github Actions for creating CI/CD pipelines
 - Vercel for application hosting
 
+Testing - Unit & Integration:
+
+- Vitest as the primary testing framework for unit and integration tests
+- React Testing Library for testing React components
+- MSW (Mock Service Worker) for mocking API calls
+- Testcontainers for realistic PostgreSQL database testing
+- pgTAP for testing database functions and RLS policies
+- @faker-js/faker for generating test data
+- fast-check for property-based testing (FSRS algorithm)
+
+Testing - E2E & Visual:
+
+- Playwright for end-to-end testing across browsers
+- Storybook for component documentation and testing
+- Playwright screenshots or Argos/Percy for visual regression testing
+- axe-core for accessibility testing
+- Lighthouse CI for performance monitoring
+
 </tech-stack>
