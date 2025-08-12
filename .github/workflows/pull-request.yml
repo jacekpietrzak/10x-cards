@@ -1,0 +1,143 @@
+name: Pull Request
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    name: Lint Code
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linting
+        run: npm run lint
+
+  unit-test:
+    name: Unit Tests
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests with coverage
+        run: npm run test:coverage
+
+      - name: Upload unit test coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-tests
+          path: coverage/
+          retention-days: 1
+
+  e2e-test:
+    name: E2E Tests
+    needs: lint
+    runs-on: ubuntu-latest
+    environment: integration
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install chromium
+
+      - name: Run E2E tests
+        run: npm run test:e2e
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLIC_KEY: ${{ secrets.SUPABASE_PUBLIC_KEY }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          E2E_USERNAME_ID: ${{ secrets.E2E_USERNAME_ID }}
+          E2E_USERNAME: ${{ secrets.E2E_USERNAME }}
+          E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
+
+      - name: Upload E2E test results
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 5
+
+  status-comment:
+    name: Status Comment
+    needs: [lint, unit-test, e2e-test]
+    runs-on: ubuntu-latest
+    if: always()
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Comment PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const jobs = {
+              'Linting': '${{ needs.lint.result }}',
+              'Unit Tests': '${{ needs.unit-test.result }}',
+              'E2E Tests': '${{ needs.e2e-test.result }}'
+            };
+
+            const statusEmoji = {
+              'success': '✅',
+              'failure': '❌',
+              'cancelled': '🚫',
+              'skipped': '⏭️'
+            };
+
+            let allSuccess = true;
+            let statusLines = [];
+
+            for (const [jobName, status] of Object.entries(jobs)) {
+              const emoji = statusEmoji[status] || '❓';
+              statusLines.push(`- ${emoji} ${jobName}`);
+              if (status !== 'success') {
+                allSuccess = false;
+              }
+            }
+
+            const overallStatus = allSuccess ? 'PASSED' : 'FAILED';
+            const headerEmoji = allSuccess ? '✅' : '❌';
+            const footerMessage = allSuccess 
+              ? 'Your pull request is ready for review!' 
+              : 'Please check the failed jobs and fix the issues.';
+
+            const body = `${headerEmoji} **Pull Request Status: ${overallStatus}**\n\n` +
+                        `Test Results:\n${statusLines.join('\n')}\n\n` +
+                        `${footerMessage}`;
+
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
