@@ -100,15 +100,14 @@ describe('FlashcardGenerationView - Core Tests', () => {
     })
 
     it('should enable button when text length is valid', async () => {
-      const user = userEvent.setup()
       render(<FlashcardGenerationView />)
       
       const input = screen.getByTestId('text-input')
       const button = screen.getByRole('button', { name: /generate/i })
       
-      // Type exactly 1000 characters (minimum valid length)
+      // Use fireEvent.change for performance with large text
       const validText = 'a'.repeat(1000)
-      await user.type(input, validText)
+      fireEvent.change(input, { target: { value: validText } })
       
       expect(button).not.toBeDisabled()
     })
@@ -162,13 +161,13 @@ describe('FlashcardGenerationView - Core Tests', () => {
 
   describe('Text Input Behavior', () => {
     it('should update input value when user types', async () => {
-      const user = userEvent.setup()
       render(<FlashcardGenerationView />)
       
       const input = screen.getByTestId('text-input')
       const testText = 'Testing user input'
       
-      await user.type(input, testText)
+      // Use fireEvent for better performance
+      fireEvent.change(input, { target: { value: testText } })
       
       expect(input).toHaveValue(testText)
     })
@@ -197,7 +196,10 @@ describe('FlashcardGenerationView - Core Tests', () => {
       const button = screen.getByRole('button', { name: /generate/i })
       
       const testText = 'a'.repeat(1000) // Valid length text
-      await user.type(input, testText)
+      // Use fireEvent.change for large text input
+      fireEvent.change(input, { target: { value: testText } })
+      
+      // Use userEvent.click for button interaction
       await user.click(button)
       
       expect(mockRequest).toHaveBeenCalledWith('/api/generations', {
@@ -226,14 +228,13 @@ describe('FlashcardGenerationView - Core Tests', () => {
 
   describe('Text Length Validation', () => {
     it('should enforce minimum text length of 1000 characters', async () => {
-      const user = userEvent.setup()
       render(<FlashcardGenerationView />)
       
       const input = screen.getByTestId('text-input')
       const button = screen.getByRole('button', { name: /generate/i })
       
       // Test with 999 characters (should remain disabled)
-      await user.type(input, 'a'.repeat(999))
+      fireEvent.change(input, { target: { value: 'a'.repeat(999) } })
       expect(button).toBeDisabled()
     })
 
