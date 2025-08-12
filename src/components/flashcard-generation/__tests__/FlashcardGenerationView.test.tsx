@@ -4,8 +4,14 @@ import userEvent from '@testing-library/user-event'
 import { FlashcardGenerationView } from '../FlashcardGenerationView'
 
 // Mock all child components with minimal implementations
+interface TextInputAreaProps {
+  value: string;
+  onChange: (value: string) => void;
+  disabled: boolean;
+}
+
 vi.mock('../TextInputArea', () => ({
-  TextInputArea: ({ value, onChange, disabled }: any) => (
+  TextInputArea: ({ value, onChange, disabled }: TextInputAreaProps) => (
     <input
       data-testid="text-input"
       value={value}

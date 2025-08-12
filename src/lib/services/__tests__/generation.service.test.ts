@@ -1,7 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { validateFlashcards } from '../generation.service'
-import { faker } from '@faker-js/faker'
-import type { FlashcardProposalDto } from '@/lib/types'
 
 // Mock OpenRouterService to prevent initialization errors
 vi.mock('../openrouter.service', () => ({

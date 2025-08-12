@@ -1,11 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 
 /**
  * API endpoint for test data cleanup
  * Only works in test environment and for the authenticated user
  */
-export async function DELETE(request: NextRequest) {
+export async function DELETE() {
   // Only allow in test environment
   if (process.env.NODE_ENV !== 'test' && process.env.NODE_ENV !== 'development') {
     return NextResponse.json(
