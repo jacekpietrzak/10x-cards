@@ -74,6 +74,7 @@ export function LoginForm() {
                   <FormControl>
                     <Input
                       placeholder="m@example.com"
+                      data-test-id="login-email-input"
                       {...field}
                       disabled={isPending}
                     />
@@ -97,7 +98,12 @@ export function LoginForm() {
                     </Link>
                   </div>
                   <FormControl>
-                    <Input type="password" {...field} disabled={isPending} />
+                    <Input 
+                      type="password" 
+                      data-test-id="login-password-input"
+                      {...field} 
+                      disabled={isPending} 
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -105,6 +111,7 @@ export function LoginForm() {
             />
             <Button
               type="submit"
+              data-test-id="login-submit-button"
               className="w-full cursor-pointer"
               disabled={isPending}
             >

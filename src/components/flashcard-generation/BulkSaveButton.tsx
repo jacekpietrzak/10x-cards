@@ -21,6 +21,7 @@ export function BulkSaveButton({
 
   return (
     <Button
+      data-test-id="bulk-save-flashcards-button"
       onClick={onSave}
       disabled={disabled || isLoading}
       className="w-full sm:w-auto"

@@ -42,7 +42,7 @@ export function FlashcardListItem({
   };
 
   return (
-    <Card>
+    <Card data-test-id="flashcard-proposal-item">
       <CardContent className="flex flex-col justify-between h-full">
         {isEditing ? (
           <div className="flex flex-col gap-4">
@@ -103,6 +103,7 @@ export function FlashcardListItem({
               <Button
                 variant="outline"
                 size="sm"
+                data-test-id="flashcard-reject-button"
                 onClick={() => onReject(flashcard)}
               >
                 <X className="h-4 w-4 mr-1" />
@@ -111,6 +112,7 @@ export function FlashcardListItem({
               <Button
                 variant="outline"
                 size="sm"
+                data-test-id="flashcard-edit-button"
                 onClick={() => setIsEditing(true)}
               >
                 <Pencil className="h-4 w-4 mr-1" />
@@ -119,6 +121,7 @@ export function FlashcardListItem({
               <Button
                 variant="default"
                 size="sm"
+                data-test-id="flashcard-accept-button"
                 onClick={() => onAccept(flashcard)}
               >
                 <Check className="h-4 w-4 mr-1" />

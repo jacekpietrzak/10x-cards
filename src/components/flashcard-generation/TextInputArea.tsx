@@ -23,6 +23,7 @@ export function TextInputArea({
       </Label>
       <Textarea
         id="text-input"
+        data-test-id="flashcard-generation-text-input"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}

@@ -174,6 +174,7 @@ export function FlashcardGenerationView() {
           <div className="mt-6">
             <Button
               ref={generateButtonRef}
+              data-test-id="generate-flashcards-button"
               onClick={handleGenerateClick}
               disabled={isGenerateDisabled}
               className="w-full sm:w-auto"
@@ -220,7 +221,7 @@ export function FlashcardGenerationView() {
                   />
                 </CardHeader>
                 <CardContent>
-                  <div role="region" aria-label="Accepted Flashcards">
+                  <div role="region" aria-label="Accepted Flashcards" data-test-id="accepted-flashcards-container">
                     <FlashcardList
                       flashcards={acceptedFlashcards}
                       onAccept={(flashcard) => {
