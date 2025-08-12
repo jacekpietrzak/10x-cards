@@ -1,4 +1,4 @@
-# 10x-cards
+# 10x-cards app
 
 ## Project Description
 
