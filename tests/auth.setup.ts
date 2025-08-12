@@ -10,12 +10,12 @@ setup('authenticate', async ({ page }) => {
   await page.goto('/login');
   console.log('📍 Navigated to login page');
   
-  // Get credentials from environment variables
-  const email = process.env.TEST_USER_EMAIL;
-  const password = process.env.TEST_USER_PASSWORD;
+  // Get credentials from environment variables (using .env.example format)
+  const email = process.env.E2E_USERNAME || process.env.TEST_USER_EMAIL;
+  const password = process.env.E2E_PASSWORD || process.env.TEST_USER_PASSWORD;
   
   if (!email || !password) {
-    throw new Error('TEST_USER_EMAIL and TEST_USER_PASSWORD must be set in .env.test');
+    throw new Error('E2E_USERNAME and E2E_PASSWORD must be set in .env.test');
   }
   
   console.log(`🔐 Authenticating with email: ${email}`);

@@ -41,6 +41,12 @@ export default defineConfig({
     {
       name: 'setup',
       testMatch: /auth\.setup\.ts/,
+      teardown: 'cleanup',  // Run cleanup after all tests
+    },
+    // Cleanup project for database teardown
+    {
+      name: 'cleanup',
+      testMatch: /global\.teardown\.ts/,
     },
     {
       name: 'chromium',
