@@ -57,7 +57,7 @@ setup('authenticate', async ({ page }) => {
       
       // Check if credentials are incorrect
       const bodyText = await page.textContent('body');
-      if (bodyText.toLowerCase().includes('invalid')) {
+      if (bodyText && bodyText.toLowerCase().includes('invalid')) {
         throw new Error('Invalid credentials - please check TEST_USER_EMAIL and TEST_USER_PASSWORD');
       }
       

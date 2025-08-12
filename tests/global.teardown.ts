@@ -18,7 +18,7 @@ teardown('cleanup test database', async () => {
   
   const result = await cleanupTestData(testUserId);
   
-  if (result.success) {
+  if (result.success && 'flashcards' in result) {
     const totalDeleted = result.flashcards + result.generations + result.errorLogs;
     if (totalDeleted > 0) {
       console.log('✅ Database cleanup completed successfully:');

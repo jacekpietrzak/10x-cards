@@ -1,5 +1,11 @@
 import { http, HttpResponse } from 'msw'
 
+interface CreateFlashcardData {
+  front: string;
+  back: string;
+  [key: string]: unknown; // dla dodatkowych pól
+}
+
 export const handlers = [
   http.get('/api/flashcards', () => {
     return HttpResponse.json([
@@ -23,7 +29,7 @@ export const handlers = [
   }),
 
   http.post('/api/flashcards', async ({ request }) => {
-    const body = await request.json()
+    const body = await request.json() as CreateFlashcardData
     return HttpResponse.json({
       ...body,
       id: '2',
