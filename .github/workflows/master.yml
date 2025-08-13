@@ -1,9 +1,9 @@
 name: Production Deployment
 
 on:
-  workflow_dispatch:
-  # push:
-  #   branches: [main]
+  # workflow_dispatch:
+  push:
+    branches: [main]
 
 jobs:
   lint:
@@ -42,7 +42,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run unit tests with coverage
+      - name: Run unit tests
         run: npm run test
 
   build:
