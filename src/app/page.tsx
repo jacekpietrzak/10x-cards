@@ -8,8 +8,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { isFeatureEnabled } from "@/lib/features";
 
 export default function Home() {
+  const authEnabled = isFeatureEnabled("auth");
+
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
@@ -25,9 +28,11 @@ export default function Home() {
               intelligence. Learn more effectively and save time.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" asChild>
-                <Link href="/register">Get Started for Free</Link>
-              </Button>
+              {authEnabled && (
+                <Button size="lg" asChild>
+                  <Link href="/register">Get Started for Free</Link>
+                </Button>
+              )}
               <Button variant="outline" size="lg" asChild>
                 <Link href="/#features">Learn More</Link>
               </Button>
@@ -132,9 +137,11 @@ export default function Home() {
                   <li>✓ Basic repetition algorithm</li>
                   <li>✓ Export to files</li>
                 </ul>
-                <Button className="w-full" variant="outline" asChild>
-                  <Link href="/register">Get Started</Link>
-                </Button>
+                {authEnabled && (
+                  <Button className="w-full" variant="outline" asChild>
+                    <Link href="/register">Get Started</Link>
+                  </Button>
+                )}
               </CardContent>
             </Card>
 
@@ -153,9 +160,11 @@ export default function Home() {
                   <li>✓ Statistics and analytics</li>
                   <li>✓ Priority support</li>
                 </ul>
-                <Button className="w-full" asChild>
-                  <Link href="/register">Try Pro</Link>
-                </Button>
+                {authEnabled && (
+                  <Button className="w-full" asChild>
+                    <Link href="/register">Try Pro</Link>
+                  </Button>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -209,9 +218,11 @@ export default function Home() {
             Join thousands of users who have already discovered the power of AI
             in learning.
           </p>
-          <Button size="lg" variant="secondary" asChild>
-            <Link href="/register">Get Started Now</Link>
-          </Button>
+          {authEnabled && (
+            <Button size="lg" variant="secondary" asChild>
+              <Link href="/register">Get Started Now</Link>
+            </Button>
+          )}
         </div>
       </section>
     </div>

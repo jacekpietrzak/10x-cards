@@ -6,10 +6,10 @@ import type { Database } from "../db/database.types";
 // ------------------------------------------------------------------------------------------------
 export type Flashcard = Database["public"]["Tables"]["flashcards"]["Row"];
 export type FlashcardInsert =
-    Database["public"]["Tables"]["flashcards"]["Insert"];
+  Database["public"]["Tables"]["flashcards"]["Insert"];
 export type Generation = Database["public"]["Tables"]["generations"]["Row"];
 export type GenerationErrorLog =
-    Database["public"]["Tables"]["generation_error_logs"]["Row"];
+  Database["public"]["Tables"]["generation_error_logs"]["Row"];
 
 // ------------------------------------------------------------------------------------------------
 // Navigation Types
@@ -17,14 +17,14 @@ export type GenerationErrorLog =
 
 // Typ dla elementów nawigacji publicznej
 export interface PublicNavItem {
-    label: string;
-    href: string;
+  label: string;
+  href: string;
 }
 
 // Typ dla elementów nawigacji prywatnej
 export interface NavItem {
-    label: string;
-    href: string;
+  label: string;
+  href: string;
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -33,20 +33,20 @@ export interface NavItem {
 //    Updated to include FSRS fields for spaced repetition
 // ------------------------------------------------------------------------------------------------
 export type FlashcardDto = Pick<
-    Flashcard,
-    | "id"
-    | "front"
-    | "back"
-    | "source"
-    | "generation_id"
-    | "created_at"
-    | "updated_at"
-    | "stability"
-    | "difficulty"
-    | "due"
-    | "lapses"
-    | "state"
-    | "last_review"
+  Flashcard,
+  | "id"
+  | "front"
+  | "back"
+  | "source"
+  | "generation_id"
+  | "created_at"
+  | "updated_at"
+  | "stability"
+  | "difficulty"
+  | "due"
+  | "lapses"
+  | "state"
+  | "last_review"
 >;
 
 // ------------------------------------------------------------------------------------------------
@@ -54,12 +54,12 @@ export type FlashcardDto = Pick<
 //    Used in PUT /flashcards/{id}/review endpoint to update FSRS parameters after review session
 // ------------------------------------------------------------------------------------------------
 export interface FlashcardReviewDto {
-    stability: number;
-    difficulty: number;
-    due: string; // ISO 8601 date string
-    lapses: number;
-    state: number;
-    last_review: string; // ISO 8601 date string
+  stability: number;
+  difficulty: number;
+  due: string; // ISO 8601 date string
+  lapses: number;
+  state: number;
+  last_review: string; // ISO 8601 date string
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -67,9 +67,9 @@ export interface FlashcardReviewDto {
 //    Contains pagination details used in list responses
 // ------------------------------------------------------------------------------------------------
 export interface PaginationDto {
-    page: number;
-    limit: number;
-    total: number;
+  page: number;
+  limit: number;
+  total: number;
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -77,8 +77,8 @@ export interface PaginationDto {
 //    Combines an array of flashcards with pagination metadata (GET /flashcards)
 // ------------------------------------------------------------------------------------------------
 export interface FlashcardsListResponseDto {
-    data: FlashcardDto[];
-    pagination: PaginationDto;
+  data: FlashcardDto[];
+  pagination: PaginationDto;
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -93,14 +93,14 @@ export interface FlashcardsListResponseDto {
 export type Source = "ai-full" | "ai-edited" | "manual";
 
 export interface FlashcardCreateDto {
-    front: string;
-    back: string;
-    source: Source;
-    generation_id: number | null;
+  front: string;
+  back: string;
+  source: Source;
+  generation_id: number | null;
 }
 
 export interface FlashcardsCreateCommand {
-    flashcards: FlashcardCreateDto[];
+  flashcards: FlashcardCreateDto[];
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -109,10 +109,10 @@ export interface FlashcardsCreateCommand {
 //    This model is a partial update of flashcard fields.
 // ------------------------------------------------------------------------------------------------
 export type FlashcardUpdateDto = Partial<{
-    front: string;
-    back: string;
-    source: "ai-full" | "ai-edited" | "manual";
-    generation_id: number | null;
+  front: string;
+  back: string;
+  source: "ai-full" | "ai-edited" | "manual";
+  generation_id: number | null;
 }>;
 
 // ------------------------------------------------------------------------------------------------
@@ -121,7 +121,7 @@ export type FlashcardUpdateDto = Partial<{
 //    The "source_text" must be between 1000 and 10000 characters.
 // ------------------------------------------------------------------------------------------------
 export interface GenerateFlashcardsCommand {
-    source_text: string;
+  source_text: string;
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -129,10 +129,10 @@ export interface GenerateFlashcardsCommand {
 //    Represents a single flashcard proposal generated from AI, always with source "ai-full".
 // ------------------------------------------------------------------------------------------------
 export interface FlashcardProposalDto {
-    id?: string;
-    front: string;
-    back: string;
-    source: "ai-full" | "ai-edited";
+  id?: string;
+  front: string;
+  back: string;
+  source: "ai-full" | "ai-edited";
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -140,9 +140,9 @@ export interface FlashcardProposalDto {
 //    This type describes the response from the POST /generations endpoint.
 // ------------------------------------------------------------------------------------------------
 export interface GenerationCreateResponseDto {
-    generation_id: number;
-    flashcards_proposals: FlashcardProposalDto[];
-    generated_count: number;
+  generation_id: number;
+  flashcards_proposals: FlashcardProposalDto[];
+  generated_count: number;
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -151,7 +151,7 @@ export interface GenerationCreateResponseDto {
 //    including metadata from the generations table and optionally, the associated flashcards.
 // ------------------------------------------------------------------------------------------------
 export type GenerationDetailDto = Generation & {
-    flashcards?: FlashcardDto[];
+  flashcards?: FlashcardDto[];
 };
 
 // ------------------------------------------------------------------------------------------------
@@ -159,15 +159,15 @@ export type GenerationDetailDto = Generation & {
 //     Represents an error log entry for the AI flashcard generation process (GET /generation-error-logs).
 // ------------------------------------------------------------------------------------------------
 export type GenerationErrorLogDto = Pick<
-    GenerationErrorLog,
-    | "id"
-    | "error_code"
-    | "error_message"
-    | "model"
-    | "source_text_hash"
-    | "source_text_length"
-    | "created_at"
-    | "user_id"
+  GenerationErrorLog,
+  | "id"
+  | "error_code"
+  | "error_message"
+  | "model"
+  | "source_text_hash"
+  | "source_text_length"
+  | "created_at"
+  | "user_id"
 >;
 
 // ------------------------------------------------------------------------------------------------
@@ -176,17 +176,17 @@ export type GenerationErrorLogDto = Pick<
 //     Contains only the essential fields without the full detail.
 // ------------------------------------------------------------------------------------------------
 export type GenerationDto = Pick<
-    Generation,
-    | "id"
-    | "model"
-    | "generated_count"
-    | "accepted_unedited_count"
-    | "accepted_edited_count"
-    | "source_text_hash"
-    | "source_text_length"
-    | "generation_duration"
-    | "created_at"
-    | "updated_at"
+  Generation,
+  | "id"
+  | "model"
+  | "generated_count"
+  | "accepted_unedited_count"
+  | "accepted_edited_count"
+  | "source_text_hash"
+  | "source_text_length"
+  | "generation_duration"
+  | "created_at"
+  | "updated_at"
 >;
 
 // ------------------------------------------------------------------------------------------------
@@ -194,8 +194,8 @@ export type GenerationDto = Pick<
 //     Combines an array of generation metadata with pagination details (GET /generations).
 // ------------------------------------------------------------------------------------------------
 export interface GenerationsListResponseDto {
-    data: GenerationDto[];
-    pagination: PaginationDto;
+  data: GenerationDto[];
+  pagination: PaginationDto;
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -203,7 +203,7 @@ export interface GenerationsListResponseDto {
 //     Response type for DELETE /flashcards/{id} endpoint
 // ------------------------------------------------------------------------------------------------
 export interface DeleteFlashcardResponseDto {
-    message: string;
+  message: string;
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -211,9 +211,9 @@ export interface DeleteFlashcardResponseDto {
 //     Represents flashcard data in forms and UI components
 // ------------------------------------------------------------------------------------------------
 export interface FlashcardViewModel {
-    id?: number;
-    front: string;
-    back: string;
+  id?: number;
+  front: string;
+  back: string;
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -228,11 +228,11 @@ export type FSRSGrade = 1 | 2 | 3 | 4;
 //     Represents the state of a review session for the session learning view
 // ------------------------------------------------------------------------------------------------
 export interface SessionViewModel {
-    cardsToReview: FlashcardDto[];
-    currentCardIndex: number;
-    isAnswerVisible: boolean;
-    sessionState: "loading" | "active" | "finished" | "empty" | "error";
-    error: string | null;
-    reviewedCount: number;
-    isSubmittingReview: boolean;
+  cardsToReview: FlashcardDto[];
+  currentCardIndex: number;
+  isAnswerVisible: boolean;
+  sessionState: "loading" | "active" | "finished" | "empty" | "error";
+  error: string | null;
+  reviewedCount: number;
+  isSubmittingReview: boolean;
 }

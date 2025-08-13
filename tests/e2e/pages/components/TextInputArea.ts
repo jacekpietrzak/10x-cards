@@ -1,4 +1,4 @@
-import { Page, Locator } from '@playwright/test';
+import { Page, Locator } from "@playwright/test";
 
 export class TextInputArea {
   readonly page: Page;
@@ -8,10 +8,16 @@ export class TextInputArea {
 
   constructor(page: Page) {
     this.page = page;
-    this.textInput = page.locator('[data-test-id="flashcard-generation-text-input"]');
+    this.textInput = page.locator(
+      '[data-test-id="flashcard-generation-text-input"]',
+    );
     // More specific selectors to avoid ambiguity
-    this.characterCount = page.locator('.text-sm span').filter({ hasText: /^\d+(?:,\d+)? characters$/ });
-    this.remainingCharacters = page.locator('.text-sm span').filter({ hasText: /^\d+(?:,\d+)? remaining$/ });
+    this.characterCount = page
+      .locator(".text-sm span")
+      .filter({ hasText: /^\d+(?:,\d+)? characters$/ });
+    this.remainingCharacters = page
+      .locator(".text-sm span")
+      .filter({ hasText: /^\d+(?:,\d+)? remaining$/ });
   }
 
   async enterText(text: string) {
@@ -35,14 +41,14 @@ export class TextInputArea {
     const text = await this.characterCount.textContent();
     if (!text) return 0;
     const match = text.match(/(\d+(?:,\d+)?)/);
-    return match ? parseInt(match[1].replace(',', '')) : 0;
+    return match ? parseInt(match[1].replace(",", "")) : 0;
   }
 
   async getRemainingCharacters() {
     const text = await this.remainingCharacters.textContent();
     if (!text) return 0;
     const match = text.match(/(\d+(?:,\d+)?)/);
-    return match ? parseInt(match[1].replace(',', '')) : 0;
+    return match ? parseInt(match[1].replace(",", "")) : 0;
   }
 
   async isValidLength() {
@@ -51,7 +57,7 @@ export class TextInputArea {
   }
 
   async waitForInput() {
-    await this.textInput.waitFor({ state: 'visible' });
+    await this.textInput.waitFor({ state: "visible" });
   }
 
   async isDisabled() {

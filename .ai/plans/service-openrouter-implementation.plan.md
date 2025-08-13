@@ -68,23 +68,19 @@ W aspekcie bezpieczeństwa należy zwrócić uwagę na:
 ## 7. Plan implementacji krok po kroku
 
 1. **Analiza wymagań i konfiguracja projektu**
-
    - Zapoznać się z dokumentacją API OpenRouter.
    - Upewnić się, że wszystkie zależności (NextJs, TypeScript, React, Tailwind, Shadcn/ui) są poprawnie skonfigurowane.
 
 2. **Implementacja modułu klienta API**
-
    - Utworzyć moduł (np. `src/lib/services/openrouter.service.ts`) dedykowany do komunikacji z API OpenRouter.
    - Zaimplementować funkcje do ustawienia komunikatów systemowego i użytkownika oraz konfiguracji parametrów modelu.
    - Wdrożyć metodę `executeRequest()` obsługującą wywołania HTTP z mechanizmem retry i backoff.
 
 3. **Implementacja warstwy logiki czatu**
-
    - Utworzyć interfejs publiczny do wysyłania wiadomości czatowych, konsolidujący konfigurację komunikatów i parametrów modelu.
    - Umożliwić dynamiczną modyfikację konfiguracji (np. zmiana komunikatu systemowego w czasie rzeczywistym).
 
 4. **Obsługa strukturalnych odpowiedzi API**
-
    - Zaimplementować metodę `buildRequestPayload()`, która tworzy odpowiedni ładunek z komunikatem systemowym, użytkownika oraz określa schemat odpowiedzi (response_format).
    - Zaimplementować funkcje walidujące i parsujące odpowiedzi z API.
 

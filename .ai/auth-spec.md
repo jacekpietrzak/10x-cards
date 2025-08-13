@@ -17,7 +17,6 @@ Logika frontendu zostanie oparta o Next.js App Router, z wyraźnym podziałem na
 Aby poprawnie oddzielić ścieżki publiczne od prywatnych, wprowadzimy następujące zmiany w strukturze `src/app`:
 
 - **Grupa `(public)`:** Nowa grupa tras dla stron dostępnych bez logowania.
-
   - `src/app/(public)/login/page.tsx`
   - `src/app/(public)/register/page.tsx`
   - `src/app/(public)/forgot-password/page.tsx`
@@ -25,7 +24,6 @@ Aby poprawnie oddzielić ścieżki publiczne od prywatnych, wprowadzimy następu
   - **Layout:** `src/app/(public)/layout.tsx` będzie renderować `PublicHeader`, zawierający linki do logowania i rejestracji.
 
 - **Grupa `(auth)`:** Istniejąca grupa dla stron wymagających autentykacji.
-
   - `src/app/(auth)/generate/page.tsx` (strona docelowa po logowaniu)
   - `src/app/(auth)/flashcards/page.tsx`
   - `src/app/(auth)/profile/page.tsx`
@@ -43,7 +41,6 @@ Aby poprawnie oddzielić ścieżki publiczne od prywatnych, wprowadzimy następu
 Wykorzystamy istniejące komponenty, rozbudowując je o logikę integracji.
 
 - **Formularze (Client Components):**
-
   - `src/components/auth/LoginForm.tsx`
   - `src/components/auth/RegisterForm.tsx`
   - `src/components/auth/ForgotPasswordForm.tsx`
@@ -60,7 +57,6 @@ Wykorzystamy istniejące komponenty, rozbudowując je o logikę integracji.
 ### 1.3. Scenariusze Użytkownika
 
 - **Rejestracja (US-001):**
-
   1. Użytkownik wypełnia `RegisterForm`.
   2. Po stronie klienta następuje walidacja (np. format email, siła hasła, zgodność haseł).
   3. Po kliknięciu "Zarejestruj" wywoływana jest akcja serwerowa `register`.
@@ -68,7 +64,6 @@ Wykorzystamy istniejące komponenty, rozbudowując je o logikę integracji.
   5. W przypadku błędu (np. email zajęty), akcja zwraca błąd, który `RegisterForm` wyświetla w `FormError`.
 
 - **Logowanie (US-002):**
-
   1. Użytkownik wypełnia `LoginForm`.
   2. Kliknięcie "Zaloguj" wywołuje akcję serwerową `login`.
   3. W przypadku sukcesu (poprawne dane), tworzona jest sesja (zapisywana w cookies), a **akcja serwerowa `login`** przekierowuje go na `/generate`.
@@ -92,7 +87,6 @@ Zamiast tradycyjnych endpointów API w `src/app/api`, wykorzystamy **Next.js Ser
 Wszystkie akcje związane z autentykacją znajdą się w nowym pliku: `src/lib/actions/auth.actions.ts`.
 
 - `login(formData: FormData)`:
-
   - Waliduje dane wejściowe przy użyciu schemy Zod z `src/lib/schemas/auth.ts`.
   - Tworzy serwerowego klienta Supabase.
   - Wywołuje `supabase.auth.signInWithPassword()`.
@@ -100,19 +94,16 @@ Wszystkie akcje związane z autentykacją znajdą się w nowym pliku: `src/lib/a
   - W przypadku sukcesu, wywołuje `revalidatePath` i `redirect`.
 
 - `register(formData: FormData)`:
-
   - Waliduje dane wejściowe (w tym sprawdzenie, czy hasła są identyczne).
   - Wywołuje `supabase.auth.signUp()`.
   - Obsługuje błąd, gdy email jest już zajęty.
   - Po sukcesie, przekierowuje zalogowanego użytkownika.
 
 - `logout()`:
-
   - Wywołuje `supabase.auth.signOut()`.
   - Przekierowuje na stronę główną (`/`).
 
 - `sendPasswordReset(formData: FormData)`:
-
   - Waliduje email.
   - Wywołuje `supabase.auth.resetPasswordForEmail()`, podając URL do strony resetowania hasła w opcjach.
 

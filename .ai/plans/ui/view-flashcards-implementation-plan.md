@@ -100,8 +100,8 @@ FlashcardsPage (src/app/(auth)/flashcards/page.tsx)
 
 ```typescript
 // Używane bezpośrednio
-FlashcardDto, FlashcardsListResponseDto, PaginationDto;
-FlashcardCreateDto, FlashcardUpdateDto, Source;
+(FlashcardDto, FlashcardsListResponseDto, PaginationDto);
+(FlashcardCreateDto, FlashcardUpdateDto, Source);
 ```
 
 ### Nowe typy wymagane:

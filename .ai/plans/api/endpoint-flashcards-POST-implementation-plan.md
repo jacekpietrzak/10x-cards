@@ -74,7 +74,7 @@ Endpoint umożliwia tworzenie jednej lub wielu fiszek (ręcznie lub na podstawie
    export async function createFlashcards(
      command: FlashcardsCreateCommand,
      userId: string,
-     supabase: SupabaseClient<Database>
+     supabase: SupabaseClient<Database>,
    ): Promise<{ flashcards: FlashcardDto[] }> {
      try {
        const toInsert = command.flashcards.map((f) => ({

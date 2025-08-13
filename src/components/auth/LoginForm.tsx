@@ -98,11 +98,11 @@ export function LoginForm() {
                     </Link>
                   </div>
                   <FormControl>
-                    <Input 
-                      type="password" 
+                    <Input
+                      type="password"
                       data-test-id="login-password-input"
-                      {...field} 
-                      disabled={isPending} 
+                      {...field}
+                      disabled={isPending}
                     />
                   </FormControl>
                   <FormMessage />

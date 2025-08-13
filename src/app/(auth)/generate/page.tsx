@@ -1,4 +1,6 @@
 import { FlashcardGenerationView } from "@/components/flashcard-generation/FlashcardGenerationView";
+import { isFeatureEnabled } from "@/lib/features";
+import { Card, CardContent } from "@/components/ui/card";
 
 export const metadata = {
   title: "Generate Flashcards - 10xCards",
@@ -6,5 +8,17 @@ export const metadata = {
 };
 
 export default function GeneratePage() {
+  if (!isFeatureEnabled("aiGeneration")) {
+    return (
+      <Card>
+        <CardContent className="p-8 text-center">
+          <p className="text-muted-foreground">
+            AI generation feature is currently disabled
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return <FlashcardGenerationView />;
 }

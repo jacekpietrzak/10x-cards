@@ -7,7 +7,6 @@ Interfejs użytkownika jest zbudowany wokół widoku generowania fiszek dostępn
 ## 2. Lista widoków
 
 - **Ekran uwierzytelniania**
-
   - **Ścieżka:** `/login` i `/register`
   - **Główny cel:** Umożliwienie użytkownikowi logowania oraz rejestracji.
   - **Kluczowe informacje:** Formularze z polami e-mail i hasło; wiadomości o błędach uwierzytelniania.
@@ -15,7 +14,6 @@ Interfejs użytkownika jest zbudowany wokół widoku generowania fiszek dostępn
   - **UX, dostępność i względy bezpieczeństwa:** Prosty formularz, czytelne komunikaty błędów, obsługa klawiatury, zabezpieczenia JWT.
 
 - **Widok generowania fiszek**
-
   - **Ścieżka:** `/generate`
   - **Główny cel:** Umożliwia użytkownikowi generowanie propozycji fiszek przez AI i ich rewizję (zaakceptuj, edytuj lub odrzuć).
   - **Kluczowe informacje:** Pole wprowadzania tekstu, lista propozycji fiszek wygenerowanych przez AI, przyciski akceptacji, edycji lub odrzucenia dla każdej fiszki.
@@ -23,7 +21,6 @@ Interfejs użytkownika jest zbudowany wokół widoku generowania fiszek dostępn
   - **UX, dostępność i względy bezpieczeństwa:** Intuicyjny formularz, walidacja długości tekstu (1000-10000 znaków), responsywność, czytelne komunikaty i inline komunikaty o błędach.
 
 - **Widok listy fiszek (Moje fiszki)**
-
   - **Ścieżka:** `/flashcards`
   - **Główny cel:** Przegląd, edycja oraz usuwanie zapisanych fiszek.
   - **Kluczowe informacje:** Lista zapisanych fiszek z informacjami o pytaniu i odpowiedzi.
@@ -31,7 +28,6 @@ Interfejs użytkownika jest zbudowany wokół widoku generowania fiszek dostępn
   - **UX, dostępność i względy bezpieczeństwa:** Czytelny układ listy, dostępność klawiaturowa modyfikacji, potwierdzenia usunięcia.
 
 - **Modal edycji fiszek**
-
   - **Ścieżka:** Wyświetlany nad widokiem listy fiszek
   - **Główny cel:** Umożliwienie edycji fiszek z walidacją danych bez zapisu w czasie rzeczywistym.
   - **Kluczowe informacje:** Formularz edycji fiszki, pola "Przód" oraz "Tył", komunikaty walidacyjne.
@@ -39,7 +35,6 @@ Interfejs użytkownika jest zbudowany wokół widoku generowania fiszek dostępn
   - **UX, dostępność i względy bezpieczeństwa:** Intuicyjny modal, dostępność dla czytników ekranu, walidacja danych po stronie klienta przed wysłaniem zmian.
 
 - **Panel użytkownika**
-
   - **Ścieżka:** `/profile`
   - **Główny cel:** Zarządzanie informacjami o koncie użytkownika i ustawieniami.
   - **Kluczowe informacje:** Dane użytkownika, opcje edycji profilu, przycisk wylogowania.

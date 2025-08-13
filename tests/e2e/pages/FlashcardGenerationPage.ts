@@ -1,7 +1,7 @@
-import { Page, Locator } from '@playwright/test';
-import { TextInputArea } from './components/TextInputArea';
-import { FlashcardProposal } from './components/FlashcardProposal';
-import { AcceptedFlashcards } from './components/AcceptedFlashcards';
+import { Page, Locator } from "@playwright/test";
+import { TextInputArea } from "./components/TextInputArea";
+import { FlashcardProposal } from "./components/FlashcardProposal";
+import { AcceptedFlashcards } from "./components/AcceptedFlashcards";
 
 export class FlashcardGenerationPage {
   readonly page: Page;
@@ -15,11 +15,13 @@ export class FlashcardGenerationPage {
     this.textInputArea = new TextInputArea(page);
     this.flashcardProposal = new FlashcardProposal(page);
     this.acceptedFlashcards = new AcceptedFlashcards(page);
-    this.generateButton = page.locator('[data-test-id="generate-flashcards-button"]');
+    this.generateButton = page.locator(
+      '[data-test-id="generate-flashcards-button"]',
+    );
   }
 
   async goto() {
-    await this.page.goto('/generate');
+    await this.page.goto("/generate");
   }
 
   async enterText(text: string) {
@@ -31,9 +33,12 @@ export class FlashcardGenerationPage {
   }
 
   async waitForGeneration() {
-    await this.page.waitForSelector('[data-test-id="flashcard-proposals-list"]', {
-      timeout: 30000
-    });
+    await this.page.waitForSelector(
+      '[data-test-id="flashcard-proposals-list"]',
+      {
+        timeout: 30000,
+      },
+    );
   }
 
   async acceptAllProposals() {
@@ -64,9 +69,12 @@ export class FlashcardGenerationPage {
   }
 
   async waitForSaveComplete() {
-    await this.page.waitForSelector('[data-test-id="bulk-save-flashcards-button"]:not(:disabled)', {
-      state: 'hidden',
-      timeout: 10000
-    });
+    await this.page.waitForSelector(
+      '[data-test-id="bulk-save-flashcards-button"]:not(:disabled)',
+      {
+        state: "hidden",
+        timeout: 10000,
+      },
+    );
   }
 }

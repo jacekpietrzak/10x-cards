@@ -57,6 +57,7 @@ NODE_ENV=test
 ### Security Features
 
 ✅ **Safe approach using public keys only**:
+
 - Uses `NEXT_PUBLIC_SUPABASE_ANON_KEY` (public key)
 - Authenticates as test user for cleanup
 - RLS policies ensure only test user's data is deleted
@@ -113,7 +114,7 @@ Create page objects for new features:
 
 ```typescript
 // tests/e2e/pages/NewFeaturePage.ts
-import { Page, Locator } from '@playwright/test';
+import { Page, Locator } from "@playwright/test";
 
 export class NewFeaturePage {
   readonly page: Page;
@@ -136,10 +137,10 @@ Write tests using page objects:
 
 ```typescript
 // tests/e2e/new-feature.spec.ts
-import { test, expect } from '@playwright/test';
-import { NewFeaturePage } from './pages/NewFeaturePage';
+import { test, expect } from "@playwright/test";
+import { NewFeaturePage } from "./pages/NewFeaturePage";
 
-test.describe('New Feature', () => {
+test.describe("New Feature", () => {
   let page: NewFeaturePage;
 
   test.beforeEach(async ({ page: playwrightPage }) => {
@@ -147,7 +148,7 @@ test.describe('New Feature', () => {
     await page.goto();
   });
 
-  test('should do something', async () => {
+  test("should do something", async () => {
     await page.doSomething();
     // Add assertions
   });
@@ -157,16 +158,19 @@ test.describe('New Feature', () => {
 ## Troubleshooting
 
 ### Tests fail with authentication errors
+
 - Check TEST_USER_EMAIL and TEST_USER_PASSWORD in .env.test
 - Ensure the test user exists in your Supabase instance
 - Delete `tests/.auth/` folder and run tests again
 
 ### Database cleanup not working
+
 - Verify SUPABASE_SERVICE_ROLE_KEY is set correctly
 - Check that TEST_USER_ID matches your test user
 - Look for cleanup logs in test output
 
 ### Tests timeout
+
 - Increase timeout in playwright.config.ts
 - Check if the dev server is running properly
 - Verify network connectivity to Supabase

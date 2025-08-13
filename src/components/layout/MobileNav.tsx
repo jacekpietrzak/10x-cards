@@ -49,7 +49,7 @@ export function MobileNav({ navItems }: MobileNavProps) {
                     "flex items-center text-sm font-medium transition-colors hover:text-foreground/80 py-2 px-3 rounded-md",
                     isActive
                       ? "bg-accent text-accent-foreground"
-                      : "text-foreground/60"
+                      : "text-foreground/60",
                   )}
                 >
                   {item.label}

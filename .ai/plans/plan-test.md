@@ -20,7 +20,6 @@ Niniejszy dokument przedstawia kompleksowy plan testów dla aplikacji 10x-Cards 
 ### 2.1 W Zakresie Testów
 
 - **Frontend (Next.js 15 + React 19)**:
-
   - Komponenty UI (shadcn/ui + Radix UI)
   - Routing (App Router)
   - Server Components i Client Components
@@ -28,14 +27,12 @@ Niniejszy dokument przedstawia kompleksowy plan testów dla aplikacji 10x-Cards 
   - Stan aplikacji i hooki
 
 - **Backend (Supabase)**:
-
   - Autentykacja użytkowników
   - Operacje CRUD na fiszkach
   - Polityki RLS
   - Triggery i funkcje bazodanowe
 
 - **Integracja AI (OpenRouter)**:
-
   - Generowanie fiszek
   - Walidacja odpowiedzi
   - Mechanizmy retry
@@ -168,7 +165,6 @@ Niniejszy dokument przedstawia kompleksowy plan testów dla aplikacji 10x-Cards 
 - [ ] Bezpieczne przechowywanie API keys
 
   **Narzędzia dodatkowe**:
-
   - Semgrep (SAST), OWASP ZAP (DAST), Snyk/Dependabot (dependencies)
   - eslint-plugin-security, eslint-plugin-jsx-a11y
 
@@ -226,7 +222,6 @@ Niniejszy dokument przedstawia kompleksowy plan testów dla aplikacji 10x-Cards 
   ```
 
   **Zalecenia CI**:
-
   - Oddzielne joby: typecheck (`tsc --noEmit`), lint, unit+integration (Vitest), E2E (Playwright), a11y (axe), performance (Lighthouse CI)
   - Cache pnpm i Playwright; matrix: Chrome/Firefox/WebKit
   - Raport coverage przez `c8`/V8 + publikacja do Codecov
@@ -246,7 +241,6 @@ Niniejszy dokument przedstawia kompleksowy plan testów dla aplikacji 10x-Cards 
 - Użytkownicy testowi z różnymi rolami
 
   **Dodatki**:
-
   - Generowanie danych: `@faker-js/faker`
   - Stabilne re-run’y AI: HAR/Polly.js lub MSW z deterministycznymi fixtures
 
@@ -267,7 +261,6 @@ Niniejszy dokument przedstawia kompleksowy plan testów dla aplikacji 10x-Cards 
 - [ ] Utils i helpers
 
   Notatki:
-
   - FSRS: property-based tests (fast-check)
 
 ### Faza 3: Testy Integracyjne (Tydzień 3-4)
@@ -278,7 +271,6 @@ Niniejszy dokument przedstawia kompleksowy plan testów dla aplikacji 10x-Cards 
 - [ ] Middleware
 
   Notatki:
-
   - Baza: Testcontainers (Postgres) + migracje
   - RLS i funkcje: pgTAP
   - Server Actions: next/testmode
@@ -291,7 +283,6 @@ Niniejszy dokument przedstawia kompleksowy plan testów dla aplikacji 10x-Cards 
 - [ ] Performance testing
 
   Notatki:
-
   - Wizualne regresje: Playwright screenshots lub Argos/Percy
 
 ### Faza 5: Testy Akceptacyjne (Tydzień 6)

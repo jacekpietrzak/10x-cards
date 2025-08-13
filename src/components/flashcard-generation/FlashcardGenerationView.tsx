@@ -59,7 +59,7 @@ export function FlashcardGenerationView() {
         (f: FlashcardProposalDto) => ({
           ...f,
           id: crypto.randomUUID(),
-        })
+        }),
       );
 
       setGenerationId(data.generation_id);
@@ -94,7 +94,7 @@ export function FlashcardGenerationView() {
           return { ...editedFlashcard, source: "ai-edited" as const };
         }
         return { ...f }; // Return a new object to prevent reference issues
-      })
+      }),
     );
     toast.success("Flashcard updated");
   };
@@ -132,7 +132,7 @@ export function FlashcardGenerationView() {
       toast.success(
         `${acceptedFlashcards.length} flashcard${
           acceptedFlashcards.length === 1 ? "" : "s"
-        } saved successfully.`
+        } saved successfully.`,
       );
     } catch {
       // Error is already handled by useApiRequest
@@ -221,19 +221,23 @@ export function FlashcardGenerationView() {
                   />
                 </CardHeader>
                 <CardContent>
-                  <div role="region" aria-label="Accepted Flashcards" data-test-id="accepted-flashcards-container">
+                  <div
+                    role="region"
+                    aria-label="Accepted Flashcards"
+                    data-test-id="accepted-flashcards-container"
+                  >
                     <FlashcardList
                       flashcards={acceptedFlashcards}
                       onAccept={(flashcard) => {
                         setAcceptedFlashcards((prev) =>
-                          prev.filter((f) => f.id !== flashcard.id)
+                          prev.filter((f) => f.id !== flashcard.id),
                         );
                         setFlashcardProposals((prev) => [...prev, flashcard]);
                         toast.info("Flashcard moved back to proposals");
                       }}
                       onReject={(flashcard) => {
                         setAcceptedFlashcards((prev) =>
-                          prev.filter((f) => f.id !== flashcard.id)
+                          prev.filter((f) => f.id !== flashcard.id),
                         );
                         toast.info("Flashcard removed from accepted list");
                       }}
@@ -245,8 +249,8 @@ export function FlashcardGenerationView() {
                                   ...editedFlashcard,
                                   source: "ai-edited" as const,
                                 }
-                              : f
-                          )
+                              : f,
+                          ),
                         );
                         toast.success("Accepted flashcard updated");
                       }}

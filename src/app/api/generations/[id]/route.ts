@@ -2,19 +2,20 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient, getAuthenticatedUserId } from "@/utils/supabase/server";
 import { z } from "zod";
 import { getGenerationById } from "@/lib/services/generation.service";
+import { isFeatureEnabled } from "@/lib/features";
 
 // Validation schema for the generation ID parameter
 // Ensures the ID is a positive integer
 const idSchema = z.string().transform((val, ctx) => {
-    const parsed = parseInt(val, 10);
-    if (isNaN(parsed) || parsed <= 0) {
-        ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: "ID must be a positive integer",
-        });
-        return z.NEVER;
-    }
-    return parsed;
+  const parsed = parseInt(val, 10);
+  if (isNaN(parsed) || parsed <= 0) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "ID must be a positive integer",
+    });
+    return z.NEVER;
+  }
+  return parsed;
 });
 
 /**
@@ -64,59 +65,62 @@ const idSchema = z.string().transform((val, ctx) => {
  * @throws {500} When database or internal server error occurs
  */
 export async function GET(
-    request: NextRequest,
-    context: { params: Promise<{ id: string }> },
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> },
 ) {
-    try {
-        const supabase = await createClient();
+  if (!isFeatureEnabled("aiGeneration")) {
+    return NextResponse.json(
+      { error: "AI generation feature is currently disabled" },
+      { status: 503 },
+    );
+  }
 
-        // Authenticate user
-        const authResult = await getAuthenticatedUserId();
+  try {
+    const supabase = await createClient();
 
-        if (authResult.error) {
-            return NextResponse.json(
-                { error: authResult.error.message },
-                { status: authResult.error.status },
-            );
-        }
+    // Authenticate user
+    const authResult = await getAuthenticatedUserId();
 
-        // 3. Walidacja parametru id
-        const { id: rawId } = await context.params;
-        const parseResult = idSchema.safeParse(rawId);
-
-        if (!parseResult.success) {
-            return NextResponse.json(
-                {
-                    error: "Invalid ID parameter",
-                    details: parseResult.error.errors[0].message,
-                },
-                { status: 400 },
-            );
-        }
-
-        const id = parseResult.data;
-
-        // 4. Wywołanie serwisu do pobrania generacji
-        const generation = await getGenerationById(
-            id,
-            authResult.userId,
-            supabase,
-        );
-
-        // 5. Sprawdzenie czy generacja istnieje
-        if (!generation) {
-            return NextResponse.json(
-                { error: "Generation not found" },
-                { status: 404 },
-            );
-        }
-
-        return NextResponse.json(generation, { status: 200 });
-    } catch (error) {
-        console.error("Unexpected error in GET /api/generations/[id]:", error);
-        return NextResponse.json(
-            { error: "Internal server error" },
-            { status: 500 },
-        );
+    if (authResult.error) {
+      return NextResponse.json(
+        { error: authResult.error.message },
+        { status: authResult.error.status },
+      );
     }
+
+    // 3. Walidacja parametru id
+    const { id: rawId } = await context.params;
+    const parseResult = idSchema.safeParse(rawId);
+
+    if (!parseResult.success) {
+      return NextResponse.json(
+        {
+          error: "Invalid ID parameter",
+          details: parseResult.error.errors[0].message,
+        },
+        { status: 400 },
+      );
+    }
+
+    const id = parseResult.data;
+
+    // 4. Wywołanie serwisu do pobrania generacji
+    const generation = await getGenerationById(id, authResult.userId, supabase);
+
+    // 5. Sprawdzenie czy generacja istnieje
+    if (!generation) {
+      return NextResponse.json(
+        { error: "Generation not found" },
+        { status: 404 },
+      );
+    }
+
+    return NextResponse.json(generation, { status: 200 });
+  } catch (error) {
+    console.error("Unexpected error in GET /api/generations/[id]:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
+  }
 }

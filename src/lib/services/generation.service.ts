@@ -2,16 +2,15 @@ import type { Database } from "@/db/database.types";
 import { SupabaseClient } from "@supabase/supabase-js";
 import crypto from "crypto";
 import {
-    FlashcardProposalDto,
-    GenerateFlashcardsCommand,
-    GenerationCreateResponseDto,
-    GenerationDetailDto,
-    GenerationsListResponseDto,
+  FlashcardProposalDto,
+  GenerateFlashcardsCommand,
+  GenerationCreateResponseDto,
+  GenerationDetailDto,
+  GenerationsListResponseDto,
 } from "@/lib/types";
 import { OpenRouterService } from "./openrouter.service";
 
-const SYSTEM_MESSAGE =
-    `You are a flashcard generation assistant. Your task is to create high-quality flashcards from the provided text.
+const SYSTEM_MESSAGE = `You are a flashcard generation assistant. Your task is to create high-quality flashcards from the provided text.
 Each flashcard should follow these rules:
 1. Front side should be a clear, concise question (max 200 characters)
 2. Back side should contain a comprehensive answer (max 500 characters)
@@ -24,8 +23,8 @@ Generate between 3-7 flashcards depending on the text length and complexity. Ret
 Format your response as a JSON array of flashcard objects with "front" and "back" properties.`;
 
 const openRouter = new OpenRouterService({
-    apiKey: process.env.OPENROUTER_API_KEY || "",
-    defaultModel: "openai/gpt-4o-mini",
+  apiKey: process.env.OPENROUTER_API_KEY || "",
+  defaultModel: "openai/gpt-4o-mini",
 });
 
 /**
@@ -34,134 +33,156 @@ const openRouter = new OpenRouterService({
  * @returns Validated and sanitized flashcards
  * @throws Error if validation fails
  */
-export function validateFlashcards(flashcards: unknown): FlashcardProposalDto[] {
-    // 1. Check if input is an array
-    if (!Array.isArray(flashcards)) {
-        throw new Error("Flashcards must be an array");
+export function validateFlashcards(
+  flashcards: unknown,
+): FlashcardProposalDto[] {
+  // 1. Check if input is an array
+  if (!Array.isArray(flashcards)) {
+    throw new Error("Flashcards must be an array");
+  }
+
+  // 2. Check array size (3-7 flashcards)
+  if (flashcards.length < 3) {
+    throw new Error("At least 3 flashcards are required");
+  }
+  if (flashcards.length > 7) {
+    throw new Error("Maximum 7 flashcards allowed");
+  }
+
+  const validatedCards: FlashcardProposalDto[] = [];
+  const seenCards = new Set<string>();
+
+  for (let i = 0; i < flashcards.length; i++) {
+    const card = flashcards[i];
+
+    // 3. Check if card is an object
+    if (typeof card !== "object" || card === null) {
+      throw new Error(`Flashcard at index ${i} must be an object`);
     }
 
-    // 2. Check array size (3-7 flashcards)
-    if (flashcards.length < 3) {
-        throw new Error("At least 3 flashcards are required");
-    }
-    if (flashcards.length > 7) {
-        throw new Error("Maximum 7 flashcards allowed");
-    }
-
-    const validatedCards: FlashcardProposalDto[] = [];
-    const seenCards = new Set<string>();
-
-    for (let i = 0; i < flashcards.length; i++) {
-        const card = flashcards[i];
-
-        // 3. Check if card is an object
-        if (typeof card !== "object" || card === null) {
-            throw new Error(`Flashcard at index ${i} must be an object`);
-        }
-
-        // 4. Check required fields
-        if (!("front" in card) || !("back" in card)) {
-            throw new Error(`Flashcard at index ${i} missing required fields (front, back)`);
-        }
-
-        // 5. Check field types
-        if (typeof card.front !== "string" || typeof card.back !== "string") {
-            throw new Error(`Flashcard at index ${i} must have string values for front and back`);
-        }
-
-        // 6. Trim whitespace
-        const front = card.front.trim();
-        const back = card.back.trim();
-
-        // 7. Check for empty strings
-        if (front.length === 0) {
-            throw new Error(`Flashcard at index ${i} has empty front text`);
-        }
-        if (back.length === 0) {
-            throw new Error(`Flashcard at index ${i} has empty back text`);
-        }
-
-        // 8. Check length limits
-        if (front.length > 200) {
-            throw new Error(`Flashcard at index ${i} front text exceeds 200 characters (${front.length})`);
-        }
-        if (back.length > 500) {
-            throw new Error(`Flashcard at index ${i} back text exceeds 500 characters (${back.length})`);
-        }
-
-        // 9. Sanitize HTML/scripts (basic sanitization - removes tags)
-        const sanitizedFront = front.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
-        const sanitizedBack = back.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
-
-        // 9.1. Check for empty strings after sanitization
-        if (sanitizedFront.length === 0) {
-            throw new Error(`Flashcard at index ${i} has empty front text after sanitization`);
-        }
-        if (sanitizedBack.length === 0) {
-            throw new Error(`Flashcard at index ${i} has empty back text after sanitization`);
-        }
-
-        // 10. Check for duplicates (using normalized text)
-        const cardKey = `${sanitizedFront.toLowerCase()}|${sanitizedBack.toLowerCase()}`;
-        if (seenCards.has(cardKey)) {
-            continue; // Skip duplicate cards silently
-        }
-        seenCards.add(cardKey);
-
-        // 11. Add validated card
-        validatedCards.push({
-            front: sanitizedFront,
-            back: sanitizedBack,
-            source: "ai-full" as const,
-        });
+    // 4. Check required fields
+    if (!("front" in card) || !("back" in card)) {
+      throw new Error(
+        `Flashcard at index ${i} missing required fields (front, back)`,
+      );
     }
 
-    // 12. Final check - ensure we still have minimum cards after deduplication
-    if (validatedCards.length < 3) {
-        throw new Error(`Only ${validatedCards.length} unique flashcards after removing duplicates (minimum 3 required)`);
+    // 5. Check field types
+    if (typeof card.front !== "string" || typeof card.back !== "string") {
+      throw new Error(
+        `Flashcard at index ${i} must have string values for front and back`,
+      );
     }
 
-    return validatedCards;
+    // 6. Trim whitespace
+    const front = card.front.trim();
+    const back = card.back.trim();
+
+    // 7. Check for empty strings
+    if (front.length === 0) {
+      throw new Error(`Flashcard at index ${i} has empty front text`);
+    }
+    if (back.length === 0) {
+      throw new Error(`Flashcard at index ${i} has empty back text`);
+    }
+
+    // 8. Check length limits
+    if (front.length > 200) {
+      throw new Error(
+        `Flashcard at index ${i} front text exceeds 200 characters (${front.length})`,
+      );
+    }
+    if (back.length > 500) {
+      throw new Error(
+        `Flashcard at index ${i} back text exceeds 500 characters (${back.length})`,
+      );
+    }
+
+    // 9. Sanitize HTML/scripts (basic sanitization - removes tags)
+    const sanitizedFront = front
+      .replace(/<[^>]*>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    const sanitizedBack = back
+      .replace(/<[^>]*>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    // 9.1. Check for empty strings after sanitization
+    if (sanitizedFront.length === 0) {
+      throw new Error(
+        `Flashcard at index ${i} has empty front text after sanitization`,
+      );
+    }
+    if (sanitizedBack.length === 0) {
+      throw new Error(
+        `Flashcard at index ${i} has empty back text after sanitization`,
+      );
+    }
+
+    // 10. Check for duplicates (using normalized text)
+    const cardKey = `${sanitizedFront.toLowerCase()}|${sanitizedBack.toLowerCase()}`;
+    if (seenCards.has(cardKey)) {
+      continue; // Skip duplicate cards silently
+    }
+    seenCards.add(cardKey);
+
+    // 11. Add validated card
+    validatedCards.push({
+      front: sanitizedFront,
+      back: sanitizedBack,
+      source: "ai-full" as const,
+    });
+  }
+
+  // 12. Final check - ensure we still have minimum cards after deduplication
+  if (validatedCards.length < 3) {
+    throw new Error(
+      `Only ${validatedCards.length} unique flashcards after removing duplicates (minimum 3 required)`,
+    );
+  }
+
+  return validatedCards;
 }
 
 async function callAIService(text: string): Promise<FlashcardProposalDto[]> {
-    try {
-        openRouter.setSystemMessage(SYSTEM_MESSAGE);
-        openRouter.setResponseFormat({
-            name: "flashcards",
-            schema: {
-                type: "object",
-                properties: {
-                    flashcards: {
-                        type: "array",
-                        items: {
-                            type: "object",
-                            properties: {
-                                front: { type: "string" },
-                                back: { type: "string" },
-                            },
-                            required: ["front", "back"],
-                        },
-                    },
-                },
-                required: ["flashcards"],
+  try {
+    openRouter.setSystemMessage(SYSTEM_MESSAGE);
+    openRouter.setResponseFormat({
+      name: "flashcards",
+      schema: {
+        type: "object",
+        properties: {
+          flashcards: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                front: { type: "string" },
+                back: { type: "string" },
+              },
+              required: ["front", "back"],
             },
-        });
+          },
+        },
+        required: ["flashcards"],
+      },
+    });
 
-        const aiResponse = await openRouter.sendChatMessage<{
-            flashcards: Array<{ front: string; back: string }>;
-        }>(text);
-        
-        console.log("Call AI response", aiResponse);
+    const aiResponse = await openRouter.sendChatMessage<{
+      flashcards: Array<{ front: string; back: string }>;
+    }>(text);
 
-        // Validate and sanitize the AI response
-        const validatedFlashcards = validateFlashcards(aiResponse.flashcards);
-        
-        return validatedFlashcards;
-    } catch (error) {
-        console.error("Error calling AI service:", error);
-        throw new Error("Failed to generate flashcards");
-    }
+    console.log("Call AI response", aiResponse);
+
+    // Validate and sanitize the AI response
+    const validatedFlashcards = validateFlashcards(aiResponse.flashcards);
+
+    return validatedFlashcards;
+  } catch (error) {
+    console.error("Error calling AI service:", error);
+    throw new Error("Failed to generate flashcards");
+  }
 }
 
 /**
@@ -172,93 +193,89 @@ async function callAIService(text: string): Promise<FlashcardProposalDto[]> {
  * @returns Generation response with flashcard proposals
  */
 export async function generateFlashcards(
-    command: GenerateFlashcardsCommand,
-    userId: string,
-    supabase: SupabaseClient<Database>,
+  command: GenerateFlashcardsCommand,
+  userId: string,
+  supabase: SupabaseClient<Database>,
 ): Promise<GenerationCreateResponseDto> {
-    try {
-        const startTime = Date.now();
+  try {
+    const startTime = Date.now();
 
-        // Create a hash of the source text using MD5
-        const sourceTextHash = crypto
-            .createHash("md5")
-            .update(command.source_text)
-            .digest("hex");
+    // Create a hash of the source text using MD5
+    const sourceTextHash = crypto
+      .createHash("md5")
+      .update(command.source_text)
+      .digest("hex");
 
-        // Call the AI service to generate flashcard proposals
-        const flashcardProposals = await callAIService(command.source_text);
+    // Call the AI service to generate flashcard proposals
+    const flashcardProposals = await callAIService(command.source_text);
 
-        // Calculate generation duration
-        const endTime = Date.now();
-        const generationDuration = endTime - startTime;
+    // Calculate generation duration
+    const endTime = Date.now();
+    const generationDuration = endTime - startTime;
 
-        // Insert generation metadata into the database
-        const { data: generationData, error: generationError } = await supabase
-            .from("generations")
-            .insert({
-                user_id: userId,
-                source_text_hash: sourceTextHash,
-                source_text_length: command.source_text.length,
-                model: "openai/gpt-4o-mini",
-                generated_count: flashcardProposals.length,
-                generation_duration: generationDuration,
-            })
-            .select("id")
-            .single();
+    // Insert generation metadata into the database
+    const { data: generationData, error: generationError } = await supabase
+      .from("generations")
+      .insert({
+        user_id: userId,
+        source_text_hash: sourceTextHash,
+        source_text_length: command.source_text.length,
+        model: "openai/gpt-4o-mini",
+        generated_count: flashcardProposals.length,
+        generation_duration: generationDuration,
+      })
+      .select("id")
+      .single();
 
-        if (generationError) {
-            // Log error and throw to be caught by the API handler
-            console.error("Error inserting generation:", generationError);
+    if (generationError) {
+      // Log error and throw to be caught by the API handler
+      console.error("Error inserting generation:", generationError);
 
-            // Log error in generation_error_logs table
-            await supabase
-                .from("generation_error_logs")
-                .insert({
-                    user_id: userId,
-                    error_code: "DB_INSERT_ERROR",
-                    error_message: generationError.message,
-                    model: "openai/gpt-4o-mini",
-                    source_text_hash: sourceTextHash,
-                    source_text_length: command.source_text.length,
-                });
+      // Log error in generation_error_logs table
+      await supabase.from("generation_error_logs").insert({
+        user_id: userId,
+        error_code: "DB_INSERT_ERROR",
+        error_message: generationError.message,
+        model: "openai/gpt-4o-mini",
+        source_text_hash: sourceTextHash,
+        source_text_length: command.source_text.length,
+      });
 
-            throw new Error(
-                `Failed to insert generation: ${generationError.message}`,
-            );
-        }
-
-        // Return the generation response
-        return {
-            generation_id: generationData.id,
-            flashcards_proposals: flashcardProposals,
-            generated_count: flashcardProposals.length,
-        };
-    } catch (error: unknown) {
-        // Handle AI service or other errors
-        console.error("Error in flashcard generation:", error);
-
-        // Create a hash of the source text for error logging
-        const sourceTextHash = crypto
-            .createHash("md5")
-            .update(command.source_text)
-            .digest("hex");
-
-        // Log error in generation_error_logs table
-        if (error instanceof Error) {
-            await supabase
-                .from("generation_error_logs")
-                .insert({
-                    user_id: userId,
-                    error_code: "AI_SERVICE_ERROR",
-                    error_message: error.message,
-                    model: "openai/gpt-4o-mini",
-                    source_text_hash: sourceTextHash,
-                    source_text_length: command.source_text.length,
-                });
-        }
-
-        throw error; // Re-throw to be caught by API handler
+      throw new Error(
+        `Failed to insert generation: ${generationError.message}`,
+      );
     }
+
+    // Return the generation response
+    return {
+      generation_id: generationData.id,
+      flashcards_proposals: flashcardProposals,
+      generated_count: flashcardProposals.length,
+    };
+  } catch (error: unknown) {
+    // Handle AI service or other errors
+    console.error("Error in flashcard generation:", error);
+
+    // Create a hash of the source text for error logging
+    const sourceTextHash = crypto
+      .createHash("md5")
+      .update(command.source_text)
+      .digest("hex");
+
+    // Log error in generation_error_logs table
+    if (error instanceof Error) {
+      await supabase.from("generation_error_logs").insert({
+        user_id: userId,
+        error_code: "AI_SERVICE_ERROR",
+        error_message: error.message,
+        model: "openai/gpt-4o-mini",
+        source_text_hash: sourceTextHash,
+        source_text_length: command.source_text.length,
+      });
+    }
+
+    throw error; // Re-throw to be caught by API handler
+  }
 }
 
 /**
@@ -270,20 +287,20 @@ export async function generateFlashcards(
  * @returns Paginated list of generations with metadata
  */
 export async function listGenerations(
-    userId: string,
-    page: number,
-    limit: number,
-    supabase: SupabaseClient<Database>,
+  userId: string,
+  page: number,
+  limit: number,
+  supabase: SupabaseClient<Database>,
 ): Promise<GenerationsListResponseDto> {
-    try {
-        // Calculate offset for pagination
-        const offset = (page - 1) * limit;
+  try {
+    // Calculate offset for pagination
+    const offset = (page - 1) * limit;
 
-        // Query generations with count for pagination
-        const { data, error, count } = await supabase
-            .from("generations")
-            .select(
-                `
+    // Query generations with count for pagination
+    const { data, error, count } = await supabase
+      .from("generations")
+      .select(
+        `
                 id,
                 model,
                 generated_count,
@@ -295,30 +312,30 @@ export async function listGenerations(
                 created_at,
                 updated_at
             `,
-                { count: "exact" },
-            )
-            .eq("user_id", userId)
-            .order("created_at", { ascending: false })
-            .range(offset, offset + limit - 1);
+        { count: "exact" },
+      )
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1);
 
-        if (error) {
-            console.error("Error fetching generations:", error);
-            throw new Error(`Failed to fetch generations: ${error.message}`);
-        }
-
-        // Return formatted response with pagination metadata
-        return {
-            data: data || [],
-            pagination: {
-                page,
-                limit,
-                total: count || 0,
-            },
-        };
-    } catch (error: unknown) {
-        console.error("Error in listGenerations:", error);
-        throw error; // Re-throw to be caught by API handler
+    if (error) {
+      console.error("Error fetching generations:", error);
+      throw new Error(`Failed to fetch generations: ${error.message}`);
     }
+
+    // Return formatted response with pagination metadata
+    return {
+      data: data || [],
+      pagination: {
+        page,
+        limit,
+        total: count || 0,
+      },
+    };
+  } catch (error: unknown) {
+    console.error("Error in listGenerations:", error);
+    throw error; // Re-throw to be caught by API handler
+  }
 }
 
 /**
@@ -329,15 +346,16 @@ export async function listGenerations(
  * @returns Generation detail with flashcards or null if not found
  */
 export async function getGenerationById(
-    generationId: number,
-    userId: string,
-    supabase: SupabaseClient<Database>,
+  generationId: number,
+  userId: string,
+  supabase: SupabaseClient<Database>,
 ): Promise<GenerationDetailDto | null> {
-    try {
-        // Query generation with associated flashcards
-        const { data, error } = await supabase
-            .from("generations")
-            .select(`
+  try {
+    // Query generation with associated flashcards
+    const { data, error } = await supabase
+      .from("generations")
+      .select(
+        `
                 *,
                 flashcards (
                     id,
@@ -354,31 +372,32 @@ export async function getGenerationById(
                     state,
                     last_review
                 )
-            `)
-            .eq("id", generationId)
-            .eq("user_id", userId)
-            .single();
+            `,
+      )
+      .eq("id", generationId)
+      .eq("user_id", userId)
+      .single();
 
-        if (error) {
-            if (error.code === "PGRST116") {
-                // No results found - generation doesn't exist or doesn't belong to user
-                return null;
-            }
-            console.error("Database error in getGenerationById:", error);
-            throw new Error(`Failed to fetch generation: ${error.message}`);
-        }
-
-        if (!data) {
-            return null;
-        }
-
-        // Return the generation with flashcards
-        return {
-            ...data,
-            flashcards: data.flashcards || [],
-        };
-    } catch (error: unknown) {
-        console.error("Error in getGenerationById:", error);
-        throw error; // Re-throw to be caught by API handler
+    if (error) {
+      if (error.code === "PGRST116") {
+        // No results found - generation doesn't exist or doesn't belong to user
+        return null;
+      }
+      console.error("Database error in getGenerationById:", error);
+      throw new Error(`Failed to fetch generation: ${error.message}`);
     }
+
+    if (!data) {
+      return null;
+    }
+
+    // Return the generation with flashcards
+    return {
+      ...data,
+      flashcards: data.flashcards || [],
+    };
+  } catch (error: unknown) {
+    console.error("Error in getGenerationById:", error);
+    throw error; // Re-throw to be caught by API handler
+  }
 }

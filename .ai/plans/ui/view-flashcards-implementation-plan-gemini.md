@@ -133,20 +133,17 @@ Nie ma potrzeby tworzenia dedykowanego custom hooka, ponieważ logika jest scent
 Komponent `FlashcardsPage` będzie odpowiedzialny za wszystkie wywołania API przy użyciu `fetch`.
 
 - **Pobieranie listy fiszek:**
-
   - **Akcja:** `useEffect` przy montowaniu komponentu oraz przy zmianie paginacji.
   - **Endpoint:** `GET /api/flashcards?page={page}&limit={limit}`
   - **Typ odpowiedzi:** `FlashcardsListResponseDto`
 
 - **Tworzenie nowej fiszki:**
-
   - **Akcja:** `onSubmit` z `FlashcardFormModal`, gdy `initialData` jest `null`.
   - **Endpoint:** `POST /api/flashcards`
   - **Typ żądania:** `FlashcardsCreateCommand` (zawierający `flashcards: [FlashcardCreateDto]`)
   - **Typ odpowiedzi:** `{ flashcards: FlashcardDto[] }`
 
 - **Aktualizacja fiszki:**
-
   - **Akcja:** `onSubmit` z `FlashcardFormModal`, gdy `initialData` nie jest `null`.
   - **Endpoint:** `PUT /api/flashcards/{id}`
   - **Typ żądania:** `FlashcardUpdateDto`
@@ -168,7 +165,6 @@ Komponent `FlashcardsPage` będzie odpowiedzialny za wszystkie wywołania API pr
 ## 9. Warunki i walidacja
 
 - **Formularz (`FlashcardForm`):**
-
   - Walidacja `front` (wymagane, max 200 znaków) i `back` (wymagane, max 500 znaków) będzie realizowana za pomocą `react-hook-form` i `zod`.
   - Przycisk "Zapisz" będzie nieaktywny, dopóki formularz nie zostanie poprawnie wypełniony.
   - Komunikaty o błędach będą wyświetlane pod odpowiednimi polami.
