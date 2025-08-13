@@ -9,10 +9,10 @@ import { z } from "zod";
  * operate on a numeric identifier.
  */
 export const flashcardIdParamSchema = z.object({
-    id: z
-        .string()
-        .regex(/^[1-9]\d*$/, "Invalid flashcard id")
-        .transform(Number),
+  id: z
+    .string()
+    .regex(/^[1-9]\d*$/, "Invalid flashcard id")
+    .transform(Number),
 });
 
 export type FlashcardIdParam = z.infer<typeof flashcardIdParamSchema>;

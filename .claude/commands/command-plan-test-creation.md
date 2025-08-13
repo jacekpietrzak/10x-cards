@@ -13,17 +13,14 @@ $ARGUMENTS
 Zanim stworzysz plan testów, przeprowadź dokładną analizę projektu wewnątrz bloku <analiza_projektu> w swoim bloku myślowym. W swojej analizie uwzględnij:
 
 1. Kluczowe elementy bazy kodu i ich znaczenie dla testowania:
-
    - Wypisz główne komponenty kodu
    - Określ, jak każdy komponent wpływa na strategię testowania
 
 2. Wpływ stosu technologicznego na strategię testowania:
-
    - Zidentyfikuj technologie w stosie
    - Opisz, jakie implikacje dla testów ma każda z technologii
 
 3. Identyfikację priorytetowych elementów całego repozytorium:
-
    - Uszereguj elementy repozytorium według ważności dla testów
    - Uzasadnij swój wybór priorytetów
 

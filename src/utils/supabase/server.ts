@@ -15,7 +15,7 @@ export async function createClient() {
         setAll(cookiesToSet) {
           try {
             cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
+              cookieStore.set(name, value, options),
             );
           } catch {
             // Cookie setting in Server Component, can be ignored with middleware
@@ -39,7 +39,10 @@ export async function getAuthenticatedUserId(): Promise<
 > {
   const supabase = await createClient();
   try {
-    const { data: { user }, error } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
 
     if (error || !user) {
       return {

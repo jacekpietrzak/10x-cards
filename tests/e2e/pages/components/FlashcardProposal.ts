@@ -1,4 +1,4 @@
-import { Page, Locator } from '@playwright/test';
+import { Page, Locator } from "@playwright/test";
 
 export class FlashcardProposal {
   readonly page: Page;
@@ -7,12 +7,16 @@ export class FlashcardProposal {
 
   constructor(page: Page) {
     this.page = page;
-    this.proposalsList = page.locator('[data-test-id="flashcard-proposals-list"]');
-    this.proposalItems = page.locator('[data-test-id="flashcard-proposal-item"]');
+    this.proposalsList = page.locator(
+      '[data-test-id="flashcard-proposals-list"]',
+    );
+    this.proposalItems = page.locator(
+      '[data-test-id="flashcard-proposal-item"]',
+    );
   }
 
   async getAllProposals() {
-    await this.proposalsList.waitFor({ state: 'visible' });
+    await this.proposalsList.waitFor({ state: "visible" });
     return await this.proposalItems.all();
   }
 
@@ -27,17 +31,23 @@ export class FlashcardProposal {
   }
 
   async acceptProposal(proposal: Locator) {
-    const acceptButton = proposal.locator('[data-test-id="flashcard-accept-button"]');
+    const acceptButton = proposal.locator(
+      '[data-test-id="flashcard-accept-button"]',
+    );
     await acceptButton.click();
   }
 
   async rejectProposal(proposal: Locator) {
-    const rejectButton = proposal.locator('[data-test-id="flashcard-reject-button"]');
+    const rejectButton = proposal.locator(
+      '[data-test-id="flashcard-reject-button"]',
+    );
     await rejectButton.click();
   }
 
   async editProposal(proposal: Locator) {
-    const editButton = proposal.locator('[data-test-id="flashcard-edit-button"]');
+    const editButton = proposal.locator(
+      '[data-test-id="flashcard-edit-button"]',
+    );
     await editButton.click();
   }
 
@@ -56,8 +66,8 @@ export class FlashcardProposal {
   }
 
   async getProposalContent(proposal: Locator) {
-    const front = await proposal.locator('.bg-muted').nth(0).textContent();
-    const back = await proposal.locator('.bg-muted').nth(1).textContent();
+    const front = await proposal.locator(".bg-muted").nth(0).textContent();
+    const back = await proposal.locator(".bg-muted").nth(1).textContent();
     return { front, back };
   }
 
@@ -72,11 +82,13 @@ export class FlashcardProposal {
   async waitForProposals(minCount: number = 1) {
     await this.page.waitForFunction(
       (expectedCount) => {
-        const items = document.querySelectorAll('[data-test-id="flashcard-proposal-item"]');
+        const items = document.querySelectorAll(
+          '[data-test-id="flashcard-proposal-item"]',
+        );
         return items.length >= expectedCount;
       },
       minCount,
-      { timeout: 30000 }
+      { timeout: 30000 },
     );
   }
 

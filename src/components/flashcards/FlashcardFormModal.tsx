@@ -48,7 +48,7 @@ interface FlashcardFormModalProps {
   onClose: () => void;
   onSubmit: (
     data: FlashcardCreateDto | FlashcardUpdateDto,
-    id?: number
+    id?: number,
   ) => Promise<void>;
   initialData: FlashcardViewModel | null;
 }

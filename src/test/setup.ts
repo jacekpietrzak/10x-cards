@@ -1,22 +1,22 @@
-import '@testing-library/jest-dom'
-import { cleanup } from '@testing-library/react'
-import { afterEach, beforeAll, afterAll, vi } from 'vitest'
-import { server } from './mocks/server'
+import "@testing-library/jest-dom";
+import { cleanup } from "@testing-library/react";
+import { afterEach, beforeAll, afterAll, vi } from "vitest";
+import { server } from "./mocks/server";
 
 beforeAll(() => {
-  server.listen({ onUnhandledRequest: 'error' })
-})
+  server.listen({ onUnhandledRequest: "error" });
+});
 
 afterEach(() => {
-  cleanup()
-  server.resetHandlers()
-})
+  cleanup();
+  server.resetHandlers();
+});
 
 afterAll(() => {
-  server.close()
-})
+  server.close();
+});
 
-vi.mock('next/navigation', () => ({
+vi.mock("next/navigation", () => ({
   useRouter: () => ({
     push: vi.fn(),
     replace: vi.fn(),
@@ -25,14 +25,14 @@ vi.mock('next/navigation', () => ({
     forward: vi.fn(),
     prefetch: vi.fn(),
   }),
-  usePathname: () => '/',
+  usePathname: () => "/",
   useSearchParams: () => new URLSearchParams(),
   useParams: () => ({}),
-}))
+}));
 
-Object.defineProperty(window, 'matchMedia', {
+Object.defineProperty(window, "matchMedia", {
   writable: true,
-  value: vi.fn().mockImplementation(query => ({
+  value: vi.fn().mockImplementation((query) => ({
     matches: false,
     media: query,
     onchange: null,
@@ -42,4 +42,4 @@ Object.defineProperty(window, 'matchMedia', {
     removeEventListener: vi.fn(),
     dispatchEvent: vi.fn(),
   })),
-})
+});

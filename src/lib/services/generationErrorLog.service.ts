@@ -19,27 +19,28 @@ const MAX_LIMIT = 1000;
  * @throws When the Supabase query returns an error.
  */
 export async function getErrorLogs(
-    filterUserId: string | undefined,
-    supabase: SupabaseClient<Database>,
-    limit: number = DEFAULT_LIMIT,
-    offset: number = 0,
+  filterUserId: string | undefined,
+  supabase: SupabaseClient<Database>,
+  limit: number = DEFAULT_LIMIT,
+  offset: number = 0,
 ): Promise<GenerationErrorLogDto[]> {
-    try {
-        // Enforce maximum limit to prevent performance issues
-        const safeLimit = Math.min(limit, MAX_LIMIT);
+  try {
+    // Enforce maximum limit to prevent performance issues
+    const safeLimit = Math.min(limit, MAX_LIMIT);
 
-        // Log admin access for audit trail
-        console.info(`Admin accessing error logs`, {
-            filterUserId: filterUserId || "all_users",
-            limit: safeLimit,
-            offset,
-            timestamp: new Date().toISOString(),
-        });
+    // Log admin access for audit trail
+    console.info(`Admin accessing error logs`, {
+      filterUserId: filterUserId || "all_users",
+      limit: safeLimit,
+      offset,
+      timestamp: new Date().toISOString(),
+    });
 
-        // Build optimized query to select only required fields
-        let query = supabase
-            .from("generation_error_logs")
-            .select(`
+    // Build optimized query to select only required fields
+    let query = supabase
+      .from("generation_error_logs")
+      .select(
+        `
                 id,
                 error_code,
                 error_message,
@@ -48,48 +49,49 @@ export async function getErrorLogs(
                 source_text_length,
                 created_at,
                 user_id
-            `)
-            .order("created_at", { ascending: false })
-            .range(offset, offset + safeLimit - 1);
+            `,
+      )
+      .order("created_at", { ascending: false })
+      .range(offset, offset + safeLimit - 1);
 
-        // Apply user filter if provided
-        if (filterUserId) {
-            query = query.eq("user_id", filterUserId);
-        }
-
-        const { data, error } = await query;
-
-        if (error) {
-            console.error("Error fetching generation error logs:", {
-                error: error.message,
-                code: error.code,
-                filterUserId,
-                limit: safeLimit,
-                offset,
-            });
-            throw new Error(
-                error?.message || "Failed to fetch generation error logs",
-            );
-        }
-
-        // Log successful retrieval
-        console.info(`Successfully retrieved ${data?.length || 0} error logs`, {
-            filterUserId: filterUserId || "all_users",
-            recordCount: data?.length || 0,
-            limit: safeLimit,
-            offset,
-        });
-
-        return data ?? [];
-    } catch (err) {
-        console.error("Error in getErrorLogs:", {
-            error: err instanceof Error ? err.message : String(err),
-            filterUserId,
-            limit,
-            offset,
-        });
-        throw err;
+    // Apply user filter if provided
+    if (filterUserId) {
+      query = query.eq("user_id", filterUserId);
     }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error("Error fetching generation error logs:", {
+        error: error.message,
+        code: error.code,
+        filterUserId,
+        limit: safeLimit,
+        offset,
+      });
+      throw new Error(
+        error?.message || "Failed to fetch generation error logs",
+      );
+    }
+
+    // Log successful retrieval
+    console.info(`Successfully retrieved ${data?.length || 0} error logs`, {
+      filterUserId: filterUserId || "all_users",
+      recordCount: data?.length || 0,
+      limit: safeLimit,
+      offset,
+    });
+
+    return data ?? [];
+  } catch (err) {
+    console.error("Error in getErrorLogs:", {
+      error: err instanceof Error ? err.message : String(err),
+      filterUserId,
+      limit,
+      offset,
+    });
+    throw err;
+  }
 }
 
 /**
@@ -101,30 +103,30 @@ export async function getErrorLogs(
  * @returns Total count of error logs matching the filter.
  */
 export async function getErrorLogsCount(
-    filterUserId: string | undefined,
-    supabase: SupabaseClient<Database>,
+  filterUserId: string | undefined,
+  supabase: SupabaseClient<Database>,
 ): Promise<number> {
-    try {
-        let query = supabase
-            .from("generation_error_logs")
-            .select("*", { count: "exact", head: true });
+  try {
+    let query = supabase
+      .from("generation_error_logs")
+      .select("*", { count: "exact", head: true });
 
-        if (filterUserId) {
-            query = query.eq("user_id", filterUserId);
-        }
-
-        const { count, error } = await query;
-
-        if (error) {
-            console.error("Error counting generation error logs:", error);
-            throw new Error(
-                error?.message || "Failed to count generation error logs",
-            );
-        }
-
-        return count ?? 0;
-    } catch (err) {
-        console.error("Error in getErrorLogsCount:", err);
-        throw err;
+    if (filterUserId) {
+      query = query.eq("user_id", filterUserId);
     }
+
+    const { count, error } = await query;
+
+    if (error) {
+      console.error("Error counting generation error logs:", error);
+      throw new Error(
+        error?.message || "Failed to count generation error logs",
+      );
+    }
+
+    return count ?? 0;
+  } catch (err) {
+    console.error("Error in getErrorLogsCount:", err);
+    throw err;
+  }
 }

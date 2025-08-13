@@ -23,7 +23,7 @@ export function DesktopNav({ navItems }: DesktopNavProps) {
             href={item.href}
             className={cn(
               "text-sm font-medium transition-colors hover:text-foreground/80",
-              isActive ? "text-foreground" : "text-foreground/60"
+              isActive ? "text-foreground" : "text-foreground/60",
             )}
           >
             {item.label}

@@ -160,7 +160,6 @@ Przed rozpoczęciem prac frontendowych, należy zaktualizować backend, aby umo�
 ### Krok 2: Wywołania API z Fronendu
 
 - **`GET /api/flashcards`**
-
   - **Cel:** Pobranie listy fiszek do powtórki.
   - **Użycie:** Wywoływane w hooku `useReviewSession` przy inicjacji sesji.
   - **Query Params:** `due_before={new Date().toISOString()}&limit=50&sort=due&order=asc`

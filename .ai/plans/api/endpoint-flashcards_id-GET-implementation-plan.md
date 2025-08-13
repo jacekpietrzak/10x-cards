@@ -71,7 +71,7 @@ Pobranie szczegółów pojedynczej fiszki (`FlashcardDto`) dla uwierzytelnionego
    export async function getFlashcardById(
      id: number,
      userId: string,
-     supabase: SupabaseClient<Database>
+     supabase: SupabaseClient<Database>,
    ): Promise<FlashcardDto | null> {
      const { data, error } = await supabase
        .from("flashcards")

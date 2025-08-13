@@ -42,7 +42,7 @@ function formatDate(dateString: string) {
 }
 
 function getSourceBadgeVariant(
-  source: string
+  source: string,
 ): "default" | "secondary" | "destructive" | "outline" {
   switch (source) {
     case "ai-full":

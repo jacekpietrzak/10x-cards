@@ -10,7 +10,6 @@ Pobranie spakowanej, filtrowalnej i sortowalnej listy fiszek dla uwierzytelnione
 - Ścieżka: `/flashcards`
 - Autoryzacja: Sesja Supabase SSR (ciasteczka HTTP-only)
 - Parametry zapytania:
-
   - `page` (number, domyślnie 1)
   - `limit` (number, domyślnie 10, maksymalnie 100)
   - `sort` (string, opcjonalnie, dozwolone: `created_at`, `front`, `back`, `source`, `updated_at`, domyślnie `created_at`)

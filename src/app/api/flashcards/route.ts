@@ -6,83 +6,91 @@ import type { FlashcardsCreateCommand, Source } from "@/lib/types";
 import { flashcardsQueryParamsSchema } from "@/lib/schemas/flashcards";
 import { listFlashcards } from "@/lib/services/flashcards.service";
 import { NextRequest } from "next/server";
+import { isFeatureEnabled } from "@/lib/features";
 
 // Validation functions
 const validateGenerationId = (
-    source: Source,
-    generationId: number | null,
+  source: Source,
+  generationId: number | null,
 ): boolean => {
-    if (source === "manual") {
-        return generationId === null;
-    }
-    if (source === "ai-full" || source === "ai-edited") {
-        return generationId !== null;
-    }
-    return false;
+  if (source === "manual") {
+    return generationId === null;
+  }
+  if (source === "ai-full" || source === "ai-edited") {
+    return generationId !== null;
+  }
+  return false;
 };
 
 // Zod schema for single flashcard validation
-const flashcardSchema = z.object({
+const flashcardSchema = z
+  .object({
     front: z.string().max(200, "Front text cannot exceed 200 characters"),
     back: z.string().max(500, "Back text cannot exceed 500 characters"),
     source: z.enum(["ai-full", "ai-edited", "manual"] as const),
     generation_id: z.number().nullable(),
-}).refine((data) => validateGenerationId(data.source, data.generation_id), {
+  })
+  .refine((data) => validateGenerationId(data.source, data.generation_id), {
     message:
-        "generation_id must be null for manual source and required for AI sources",
+      "generation_id must be null for manual source and required for AI sources",
     path: ["generation_id"],
-});
+  });
 
 // Schema for the entire request body
 const createFlashcardsSchema = z.object({
-    flashcards: z.array(flashcardSchema)
-        .min(1, "At least one flashcard is required")
-        .max(100, "Maximum 100 flashcards allowed per request"),
+  flashcards: z
+    .array(flashcardSchema)
+    .min(1, "At least one flashcard is required")
+    .max(100, "Maximum 100 flashcards allowed per request"),
 });
 
 export async function POST(request: Request) {
-    try {
-        // Parse request body
-        const body = await request.json();
+  if (!isFeatureEnabled("flashcards")) {
+    return NextResponse.json(
+      { error: "Flashcards feature is currently disabled" },
+      { status: 503 },
+    );
+  }
 
-        // Validate request body against schema
-        const result = createFlashcardsSchema.safeParse(body);
+  try {
+    // Parse request body
+    const body = await request.json();
 
-        if (!result.success) {
-            return NextResponse.json(
-                { error: result.error.issues },
-                { status: 400 },
-            );
-        }
+    // Validate request body against schema
+    const result = createFlashcardsSchema.safeParse(body);
 
-        // Create Supabase client
-        const supabase = await createClient();
-
-        // Authenticate user
-        const authResult = await getAuthenticatedUserId();
-        if (authResult.error) {
-            return NextResponse.json(
-                { error: authResult.error.message },
-                { status: authResult.error.status },
-            );
-        }
-
-        // Create flashcards using service
-        const command = result.data as FlashcardsCreateCommand;
-        const response = await createFlashcards(
-            command,
-            authResult.userId,
-            supabase,
-        );
-
-        return NextResponse.json(response, { status: 201 });
-    } catch (error) {
-        console.error("Error in POST /api/flashcards:", error);
-        return NextResponse.json(
-            { error: "An error occurred while creating flashcards." },
-            { status: 500 },
-        );
+    if (!result.success) {
+      return NextResponse.json({ error: result.error.issues }, { status: 400 });
     }
+
+    // Create Supabase client
+    const supabase = await createClient();
+
+    // Authenticate user
+    const authResult = await getAuthenticatedUserId();
+    if (authResult.error) {
+      return NextResponse.json(
+        { error: authResult.error.message },
+        { status: authResult.error.status },
+      );
+    }
+
+    // Create flashcards using service
+    const command = result.data as FlashcardsCreateCommand;
+    const response = await createFlashcards(
+      command,
+      authResult.userId,
+      supabase,
+    );
+
+    return NextResponse.json(response, { status: 201 });
+  } catch (error) {
+    console.error("Error in POST /api/flashcards:", error);
+    return NextResponse.json(
+      { error: "An error occurred while creating flashcards." },
+      { status: 500 },
+    );
+  }
 }
 
 /**
@@ -100,45 +108,48 @@ export async function POST(request: Request) {
  * - generation_id (number)
  */
 export async function GET(request: NextRequest) {
-    try {
-        // Extract and validate query parameters
-        const { searchParams } = new URL(request.url);
-        const rawParams = Object.fromEntries(searchParams.entries());
-        const parsed = flashcardsQueryParamsSchema.safeParse(rawParams);
+  if (!isFeatureEnabled("flashcards")) {
+    return NextResponse.json(
+      { error: "Flashcards feature is currently disabled" },
+      { status: 503 },
+    );
+  }
 
-        if (!parsed.success) {
-            return NextResponse.json(
-                { error: parsed.error.errors.map((e) => e.message).join(", ") },
-                { status: 400 },
-            );
-        }
+  try {
+    // Extract and validate query parameters
+    const { searchParams } = new URL(request.url);
+    const rawParams = Object.fromEntries(searchParams.entries());
+    const parsed = flashcardsQueryParamsSchema.safeParse(rawParams);
 
-        const params = parsed.data;
-
-        // Create Supabase server client
-        const supabase = await createClient();
-
-        // Authenticate user
-        const authResult = await getAuthenticatedUserId();
-        if (authResult.error) {
-            return NextResponse.json(
-                { error: authResult.error.message },
-                { status: authResult.error.status },
-            );
-        }
-
-        const result = await listFlashcards(
-            authResult.userId,
-            params,
-            supabase,
-        );
-
-        return NextResponse.json(result, { status: 200 });
-    } catch (err) {
-        console.error("Error fetching flashcards:", err);
-        return NextResponse.json(
-            { error: "Internal server error" },
-            { status: 500 },
-        );
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.errors.map((e) => e.message).join(", ") },
+        { status: 400 },
+      );
     }
+
+    const params = parsed.data;
+
+    // Create Supabase server client
+    const supabase = await createClient();
+
+    // Authenticate user
+    const authResult = await getAuthenticatedUserId();
+    if (authResult.error) {
+      return NextResponse.json(
+        { error: authResult.error.message },
+        { status: authResult.error.status },
+      );
+    }
+
+    const result = await listFlashcards(authResult.userId, params, supabase);
+
+    return NextResponse.json(result, { status: 200 });
+  } catch (err) {
+    console.error("Error fetching flashcards:", err);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
+  }
 }

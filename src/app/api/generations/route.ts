@@ -3,20 +3,23 @@ import { z } from "zod";
 import { createClient, getAuthenticatedUserId } from "@/utils/supabase/server";
 import { GenerateFlashcardsCommand } from "@/lib/types";
 import {
-    generateFlashcards,
-    listGenerations,
+  generateFlashcards,
+  listGenerations,
 } from "@/lib/services/generation.service";
+import { isFeatureEnabled } from "@/lib/features";
 
 // Validation schema for the request body
 const generateFlashcardsSchema = z.object({
-    source_text: z.string().min(1000, "Text must be at least 1000 characters")
-        .max(10000, "Text cannot exceed 10000 characters"),
+  source_text: z
+    .string()
+    .min(1000, "Text must be at least 1000 characters")
+    .max(10000, "Text cannot exceed 10000 characters"),
 });
 
 // Validation schema for query parameters in GET request
 const listGenerationsSchema = z.object({
-    page: z.coerce.number().min(1).default(1),
-    limit: z.coerce.number().min(1).max(100).default(10),
+  page: z.coerce.number().min(1).default(1),
+  limit: z.coerce.number().min(1).max(100).default(10),
 });
 
 /**
@@ -28,42 +31,49 @@ const listGenerationsSchema = z.object({
  * @returns JSON response with generation results and flashcard proposals
  */
 export async function POST(request: Request) {
-    const body = await request.json();
-    const parsed = generateFlashcardsSchema.safeParse(body);
+  if (!isFeatureEnabled("aiGeneration")) {
+    return NextResponse.json(
+      { error: "AI generation feature is currently disabled" },
+      { status: 503 },
+    );
+  }
 
-    if (!parsed.success) {
-        return NextResponse.json(
-            { error: parsed.error.errors.map((e) => e.message).join(", ") },
-            { status: 400 },
-        );
+  const body = await request.json();
+  const parsed = generateFlashcardsSchema.safeParse(body);
+
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: parsed.error.errors.map((e) => e.message).join(", ") },
+      { status: 400 },
+    );
+  }
+
+  try {
+    const command: GenerateFlashcardsCommand = parsed.data;
+    const supabase = await createClient();
+
+    const authResult = await getAuthenticatedUserId();
+    if (authResult.error) {
+      return NextResponse.json(
+        { error: authResult.error.message },
+        { status: authResult.error.status },
+      );
     }
 
-    try {
-        const command: GenerateFlashcardsCommand = parsed.data;
-        const supabase = await createClient();
+    const result = await generateFlashcards(
+      command,
+      authResult.userId,
+      supabase,
+    );
 
-        const authResult = await getAuthenticatedUserId();
-        if (authResult.error) {
-            return NextResponse.json(
-                { error: authResult.error.message },
-                { status: authResult.error.status },
-            );
-        }
-
-        const result = await generateFlashcards(
-            command,
-            authResult.userId,
-            supabase,
-        );
-
-        return NextResponse.json(result, { status: 201 });
-    } catch (err) {
-        console.error("Error generating flashcards:", err);
-        return NextResponse.json(
-            { error: "An error occurred while generating flashcards." },
-            { status: 500 },
-        );
-    }
+    return NextResponse.json(result, { status: 201 });
+  } catch (err) {
+    console.error("Error generating flashcards:", err);
+    return NextResponse.json(
+      { error: "An error occurred while generating flashcards." },
+      { status: 500 },
+    );
+  }
 }
 
 /**
@@ -111,49 +121,56 @@ export async function POST(request: Request) {
  * @throws {500} When database or internal server error occurs
  */
 export async function GET(request: NextRequest) {
-    try {
-        // Parse query parameters from URL
-        const { searchParams } = new URL(request.url);
-        const queryParams = Object.fromEntries(searchParams.entries());
+  if (!isFeatureEnabled("aiGeneration")) {
+    return NextResponse.json(
+      { error: "AI generation feature is currently disabled" },
+      { status: 503 },
+    );
+  }
 
-        // Validate query parameters
-        const parsed = listGenerationsSchema.safeParse(queryParams);
+  try {
+    // Parse query parameters from URL
+    const { searchParams } = new URL(request.url);
+    const queryParams = Object.fromEntries(searchParams.entries());
 
-        if (!parsed.success) {
-            return NextResponse.json(
-                { error: parsed.error.errors.map((e) => e.message).join(", ") },
-                { status: 400 },
-            );
-        }
+    // Validate query parameters
+    const parsed = listGenerationsSchema.safeParse(queryParams);
 
-        const { page, limit } = parsed.data;
-
-        // Create Supabase client
-        const supabase = await createClient();
-
-        // Authenticate user
-        const authResult = await getAuthenticatedUserId();
-        if (authResult.error) {
-            return NextResponse.json(
-                { error: authResult.error.message },
-                { status: authResult.error.status },
-            );
-        }
-
-        // Call service function to get generations list
-        const result = await listGenerations(
-            authResult.userId,
-            page,
-            limit,
-            supabase,
-        );
-
-        return NextResponse.json(result, { status: 200 });
-    } catch (err) {
-        console.error("Error fetching generations:", err);
-        return NextResponse.json(
-            { error: "Internal server error" },
-            { status: 500 },
-        );
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.errors.map((e) => e.message).join(", ") },
+        { status: 400 },
+      );
     }
+
+    const { page, limit } = parsed.data;
+
+    // Create Supabase client
+    const supabase = await createClient();
+
+    // Authenticate user
+    const authResult = await getAuthenticatedUserId();
+    if (authResult.error) {
+      return NextResponse.json(
+        { error: authResult.error.message },
+        { status: authResult.error.status },
+      );
+    }
+
+    // Call service function to get generations list
+    const result = await listGenerations(
+      authResult.userId,
+      page,
+      limit,
+      supabase,
+    );
+
+    return NextResponse.json(result, { status: 200 });
+  } catch (err) {
+    console.error("Error fetching generations:", err);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
+  }
 }

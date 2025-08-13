@@ -98,7 +98,7 @@ src/app/generate/
     proposal: FlashcardProposalViewModel;
     onUpdate: (
       id: string,
-      updates: Partial<FlashcardProposalViewModel>
+      updates: Partial<FlashcardProposalViewModel>,
     ) => void;
     onToggleSelect: (id: string) => void;
     isSelected: boolean;
@@ -130,7 +130,7 @@ src/app/generate/
     proposals: FlashcardProposalViewModel[];
     onUpdateProposal: (
       id: string,
-      updates: Partial<FlashcardProposalViewModel>
+      updates: Partial<FlashcardProposalViewModel>,
     ) => void;
     onSaveSelected: () => Promise<void>;
     onSaveAll: () => Promise<void>;
@@ -254,7 +254,7 @@ const useGeneration = () => {
 
   const updateProposal = (
     id: string,
-    updates: Partial<FlashcardProposalViewModel>
+    updates: Partial<FlashcardProposalViewModel>,
   ) => {
     // Aktualizacja pojedynczej propozycji
   };
@@ -388,68 +388,58 @@ Stan będzie zarządzany centralnie w komponencie `GenerateView` i przekazywany 
 ## 11. Kroki implementacji
 
 1. **Przygotowanie struktury plików**
-
    - Utworzenie katalogu `src/app/generate/`
    - Dodanie pliku `page.tsx` z podstawowym layoutem
    - Utworzenie katalogu `components/` dla komponentów widoku
 
 2. **Implementacja typów i interfejsów**
-
    - Dodanie nowych typów do `src/lib/types.ts`
    - Utworzenie `FlashcardProposalViewModel` i `GenerationViewState`
    - Definicja interfejsów props dla wszystkich komponentów
 
 3. **Utworzenie custom hooka useGeneration**
-
    - Implementacja stanu procesu generowania
    - Dodanie funkcji `generateFlashcards` z obsługą API
    - Implementacja `saveFlashcards` z walidacją
    - Dodanie funkcji pomocniczych do zarządzania stanem
 
 4. **Implementacja TextInputForm**
-
    - Komponent textarea z walidacją real-time
    - Licznik znaków z wizualnym feedbackiem
    - Integracja z useGeneration hook
    - Dodanie obsługi błędów i stanów ładowania
 
 5. **Utworzenie FlashcardProposal**
-
    - Komponent karty pojedynczej propozycji
    - Implementacja trybu edycji z walidacją
    - Dodanie funkcjonalności selekcji i odrzucania
    - Integracja z shadcn/ui komponentami
 
 6. **Implementacja FlashcardProposalsList**
-
    - Kontener dla listy propozycji
    - Funkcjonalność selekcji masowej
    - Licznik i podsumowanie wybranych elementów
    - Integracja z ActionsPanel
 
 7. **Utworzenie ActionsPanel**
-
    - Przyciski akcji masowych
    - Logika zapisywania wybranych/wszystkich
    - Obsługa stanów ładowania i błędów
    - Walidacja dostępności akcji
 
 8. **Implementacja GenerateView**
-
    - Główny kontener z zarządzaniem stanem
    - Integracja wszystkich komponentów potomnych
    - Obsługa przepływu między krokami procesu
    - Dodanie loading states i error boundaries
 
 9. **Dodanie styli i responsywności**
-
    - Stylowanie komponentów z Tailwind CSS
    - Implementacja responsywnego layoutu
    - Dodanie animacji i transitions
    - Testowanie na różnych urządzeniach
 
 10. **Testowanie i optymalizacja**
-
     - Testy jednostkowe komponentów
     - Testy integracyjne przepływu użytkownika
     - Optymalizacja wydajności

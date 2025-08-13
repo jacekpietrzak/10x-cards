@@ -1,4 +1,4 @@
-import { Page, Locator, expect } from '@playwright/test';
+import { Page, Locator, expect } from "@playwright/test";
 
 export class LoginPage {
   readonly page: Page;
@@ -16,25 +16,25 @@ export class LoginPage {
   }
 
   async goto() {
-    await this.page.goto('/login');
+    await this.page.goto("/login");
   }
 
   async login(email: string, password: string) {
     // Wait for inputs to be ready
-    await this.emailInput.waitFor({ state: 'visible' });
-    await this.passwordInput.waitFor({ state: 'visible' });
-    
+    await this.emailInput.waitFor({ state: "visible" });
+    await this.passwordInput.waitFor({ state: "visible" });
+
     // Clear and fill inputs
     await this.emailInput.clear();
     await this.emailInput.fill(email);
-    
+
     await this.passwordInput.clear();
     await this.passwordInput.fill(password);
-    
+
     // Wait for button to be enabled
-    await this.submitButton.waitFor({ state: 'visible' });
+    await this.submitButton.waitFor({ state: "visible" });
     await expect(this.submitButton).toBeEnabled();
-    
+
     // Click and wait for response
     await this.submitButton.click();
   }
@@ -42,23 +42,23 @@ export class LoginPage {
   async waitForLogin() {
     // Wait for either redirect or error
     await Promise.race([
-      this.page.waitForURL('**/generate', { timeout: 10000 }),
-      this.page.waitForURL('**/flashcards', { timeout: 10000 }),
-      this.errorMessage.waitFor({ state: 'visible', timeout: 10000 })
+      this.page.waitForURL("**/generate", { timeout: 10000 }),
+      this.page.waitForURL("**/flashcards", { timeout: 10000 }),
+      this.errorMessage.waitFor({ state: "visible", timeout: 10000 }),
     ]).catch(() => {
       // If none of the above happen, check current URL
       const url = this.page.url();
-      if (!url.includes('/login')) {
+      if (!url.includes("/login")) {
         // We've navigated away from login, consider it success
         return;
       }
-      throw new Error('Login failed - still on login page');
+      throw new Error("Login failed - still on login page");
     });
   }
 
   async isLoggedIn() {
     const url = this.page.url();
-    return !url.includes('/login') && !url.includes('/register');
+    return !url.includes("/login") && !url.includes("/register");
   }
 
   async getErrorMessage() {

@@ -5,6 +5,7 @@ import { UserNav } from "./UserNav";
 import { HybridMobileNav } from "./HybridMobileNav";
 import { Button } from "@/components/ui/button";
 import type { PublicNavItem } from "@/lib/types";
+import { isFeatureEnabled } from "@/lib/features";
 
 const publicNavItems: PublicNavItem[] = [
   { label: "Features", href: "/#features" },
@@ -17,6 +18,10 @@ interface HybridHeaderProps {
 }
 
 export function HybridHeader({ user }: HybridHeaderProps) {
+  const authEnabled = isFeatureEnabled("auth");
+  const flashcardsEnabled = isFeatureEnabled("flashcards");
+  const aiGenerationEnabled = isFeatureEnabled("aiGeneration");
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
@@ -39,19 +44,29 @@ export function HybridHeader({ user }: HybridHeaderProps) {
         <div className="flex items-center space-x-4">
           {/* Quick access to main app functions */}
           <div className="hidden lg:flex items-center space-x-2">
-            <Button variant="ghost" size="sm" asChild>
-              <Link href="/generate">Generate</Link>
-            </Button>
-            <Button variant="ghost" size="sm" asChild>
-              <Link href="/flashcards">My Cards</Link>
-            </Button>
-            <Button variant="ghost" size="sm" asChild>
-              <Link href="/session">Study Session</Link>
-            </Button>
+            {aiGenerationEnabled && (
+              <Button variant="ghost" size="sm" asChild>
+                <Link href="/generate">Generate</Link>
+              </Button>
+            )}
+            {flashcardsEnabled && (
+              <Button variant="ghost" size="sm" asChild>
+                <Link href="/flashcards">My Cards</Link>
+              </Button>
+            )}
+            {flashcardsEnabled && (
+              <Button variant="ghost" size="sm" asChild>
+                <Link href="/session">Study Session</Link>
+              </Button>
+            )}
           </div>
 
-          <HybridMobileNav />
-          <UserNav user={user} />
+          <HybridMobileNav
+            showAuth={authEnabled}
+            showFlashcards={flashcardsEnabled}
+            showAiGeneration={aiGenerationEnabled}
+          />
+          {authEnabled && <UserNav user={user} />}
         </div>
       </div>
     </header>

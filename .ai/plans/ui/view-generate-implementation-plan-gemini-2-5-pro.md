@@ -149,7 +149,6 @@ Logika biznesowa i stan widoku zostaną scentralizowane w customowym hooku `useF
 Integracja będzie obejmować dwa główne wywołania API.
 
 1.  **Generowanie propozycji:**
-
     - **Endpoint:** `POST /api/generations`
     - **Akcja:** Użytkownik klika "Generuj fiszki".
     - **Request Body:** `GenerateFlashcardsCommand` (`{ source_text: string }`)

@@ -13,14 +13,24 @@ const publicNavItems: PublicNavItem[] = [
   { label: "O nas", href: "/#about" },
 ];
 
-const appNavItems = [
-  { label: "Generuj", href: "/generate" },
-  { label: "Moje fiszki", href: "/flashcards" },
-  { label: "Sesja nauki", href: "/session" },
-];
+interface HybridMobileNavProps {
+  showAuth?: boolean;
+  showFlashcards?: boolean;
+  showAiGeneration?: boolean;
+}
 
-export function HybridMobileNav() {
+export function HybridMobileNav({
+  showAuth = true,
+  showFlashcards = true,
+  showAiGeneration = true,
+}: HybridMobileNavProps = {}) {
   const [open, setOpen] = useState(false);
+
+  const appNavItems = [
+    ...(showAiGeneration ? [{ label: "Generuj", href: "/generate" }] : []),
+    ...(showFlashcards ? [{ label: "Moje fiszki", href: "/flashcards" }] : []),
+    ...(showFlashcards ? [{ label: "Sesja nauki", href: "/session" }] : []),
+  ];
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -61,23 +71,25 @@ export function HybridMobileNav() {
           </div>
 
           {/* Navigation to app functions */}
-          <div>
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-              Aplikacja
-            </h3>
-            <nav className="flex flex-col space-y-2">
-              {appNavItems.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setOpen(false)}
-                  className="flex items-center text-sm font-medium transition-colors hover:text-foreground/80 py-2 px-3 rounded-md text-foreground/60"
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </nav>
-          </div>
+          {showAuth && appNavItems.length > 0 && (
+            <div>
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                Aplikacja
+              </h3>
+              <nav className="flex flex-col space-y-2">
+                {appNavItems.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setOpen(false)}
+                    className="flex items-center text-sm font-medium transition-colors hover:text-foreground/80 py-2 px-3 rounded-md text-foreground/60"
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </nav>
+            </div>
+          )}
         </div>
       </SheetContent>
     </Sheet>

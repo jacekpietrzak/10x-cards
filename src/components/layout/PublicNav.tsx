@@ -6,9 +6,10 @@ import type { PublicNavItem } from "@/lib/types";
 
 interface PublicNavProps {
   navItems: PublicNavItem[];
+  showAuth?: boolean;
 }
 
-export function PublicNav({ navItems }: PublicNavProps) {
+export function PublicNav({ navItems, showAuth = true }: PublicNavProps) {
   return (
     <nav className="flex items-center space-x-8">
       {/* Navigation Links */}
@@ -24,13 +25,15 @@ export function PublicNav({ navItems }: PublicNavProps) {
         ))}
       </div>
 
-      {/* Auth Buttons */}
-      <div className="flex items-center space-x-4">
-        <Link href="/login">Sign In</Link>
-        <Button asChild size="sm">
-          <Link href="/register">Sign Up</Link>
-        </Button>
-      </div>
+      {/* Auth Buttons - only show when auth is enabled */}
+      {showAuth && (
+        <div className="flex items-center space-x-4">
+          <Link href="/login">Sign In</Link>
+          <Button asChild size="sm">
+            <Link href="/register">Sign Up</Link>
+          </Button>
+        </div>
+      )}
     </nav>
   );
 }

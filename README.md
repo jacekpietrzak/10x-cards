@@ -23,7 +23,6 @@
 ## Tech Stack
 
 - **Frontend**
-
   - Next.js 15 (App Router)
   - React 19
   - TypeScript 5
@@ -32,11 +31,9 @@
   - ts-fsrs (Spaced Repetition Algorithm)
 
 - **Backend & Database**
-
   - Supabase (PostgreSQL, Auth, BaaS)
 
 - **AI Integration**
-
   - Openrouter.ai (access to OpenAI, Anthropic, Google, etc.)
 
 - **CI/CD & Hosting**

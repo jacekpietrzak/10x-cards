@@ -11,34 +11,28 @@ Manualne tworzenie wysokiej jakości fiszek wymaga dużych nakładów czasu i wy
 ## 3. Wymagania funkcjonalne
 
 1. Automatyczne generowanie fiszek:
-
    - Użytkownik wkleja dowolny tekst (np. fragment podręcznika).
    - Aplikacja wysyła tekst do modelu LLM za pośrednictwem API.
    - Model LLM proponuje zestaw fiszek (pytania i odpowiedzi).
    - Fiszki są przedstawiane użytkownikowi w formie listy z możliwością akceptacji, edycji lub odrzucenia.
 
 2. Ręczne tworzenie i zarządzanie fiszkami:
-
    - Formularz do ręcznego tworzenia fiszek (przód i tył fiszki).
    - Opcje edycji i usuwania istniejących fiszek.
    - Ręczne tworzenie i wyświetlanie w ramach widoku listy "Moje fiszki"
 
 3. Podstawowy system uwierzytelniania i kont użytkowników:
-
    - Rejestracja i logowanie.
    - Możliwość usunięcia konta i powiązanych fiszek na życzenie.
 
 4. Integracja z algorytmem powtórek:
-
    - Zapewnienie mechanizmu przypisywania fiszek do harmonogramu powtórek (korzystanie z gotowego algorytmu).
    - Brak dodatkowych metadanych i zaawansowanych funkcji powiadomień w MVP.
 
 5. Przechowywanie i skalowalność:
-
    - Dane o fiszkach i użytkownikach przechowywane w sposób zapewniający skalowalność i bezpieczeństwo.
 
 6. Statystyki generowania fiszek:
-
    - Zbieranie informacji o tym, ile fiszek zostało wygenerowanych przez AI i ile z nich ostatecznie zaakceptowano.
 
 7. Wymagania prawne i ograniczenia:

@@ -65,13 +65,11 @@ src/
 1. **Authentication Flow**: Middleware-based auth using Supabase. Public paths defined in `middleware.ts`. Protected routes under `app/(auth)/`.
 
 2. **Service Layer Pattern**: Business logic isolated in `lib/services/`:
-
    - `flashcards.service.ts`: CRUD operations with FSRS integration
    - `generation.service.ts`: AI flashcard generation
    - `openrouter.service.ts`: LLM API client with retry logic
 
 3. **Database Schema**: Row-Level Security (RLS) enabled. Tables:
-
    - `flashcards`: Card content with FSRS fields (stability, difficulty, due, state)
    - `generations`: AI generation history
    - `generation_error_logs`: Error tracking
