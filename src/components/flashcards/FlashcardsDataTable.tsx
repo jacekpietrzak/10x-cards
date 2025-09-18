@@ -34,7 +34,7 @@ interface FlashcardsDataTableProps {
 }
 
 function formatDate(dateString: string) {
-  return new Date(dateString).toLocaleDateString("pl-PL", {
+  return new Date(dateString).toLocaleDateString("en-US", {
     year: "numeric",
     month: "short",
     day: "numeric",
@@ -42,7 +42,7 @@ function formatDate(dateString: string) {
 }
 
 function getSourceBadgeVariant(
-  source: string,
+  source: string
 ): "default" | "secondary" | "destructive" | "outline" {
   switch (source) {
     case "ai-full":
@@ -61,9 +61,9 @@ function getSourceLabel(source: string) {
     case "ai-full":
       return "AI";
     case "ai-edited":
-      return "AI edytowane";
+      return "AI edited";
     case "manual":
-      return "Ręczne";
+      return "Manual";
     default:
       return source;
   }
@@ -83,14 +83,14 @@ function DataTablePagination({
   return (
     <div className="flex items-center justify-between px-2">
       <div className="flex-1 text-sm text-muted-foreground">
-        Wyświetlanie {(pagination.page - 1) * pagination.limit + 1} do{" "}
-        {Math.min(pagination.page * pagination.limit, pagination.total)} z{" "}
-        {pagination.total} wyników
+        Showing {(pagination.page - 1) * pagination.limit + 1} to{" "}
+        {Math.min(pagination.page * pagination.limit, pagination.total)} of{" "}
+        {pagination.total} results
       </div>
       <div className="flex items-center space-x-6 lg:space-x-8">
         <div className="flex items-center space-x-2">
           <p className="text-sm font-medium">
-            Strona {pagination.page} z {totalPages}
+            Page {pagination.page} of {totalPages}
           </p>
         </div>
         <div className="flex items-center space-x-2">
@@ -135,7 +135,7 @@ function DataTableRowActions({
           className="h-8 w-8 p-0 cursor-pointer transition-colors hover:bg-muted hover:scale-105 disabled:pointer-events-none disabled:opacity-50"
           disabled={isOperationInProgress}
         >
-          <span className="sr-only">Otwórz menu</span>
+          <span className="sr-only">Open menu</span>
           <MoreHorizontal className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
@@ -146,7 +146,7 @@ function DataTableRowActions({
           className="cursor-pointer transition-colors hover:bg-muted focus:bg-muted disabled:pointer-events-none disabled:opacity-50"
         >
           <Edit className="mr-2 h-4 w-4" />
-          Edytuj
+          Edit
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => onDelete(flashcard.id)}
@@ -154,7 +154,7 @@ function DataTableRowActions({
           disabled={isOperationInProgress}
         >
           <Trash2 className="mr-2 h-4 w-4" />
-          Usuń
+          Delete
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -177,11 +177,11 @@ export function FlashcardsDataTable({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Przód</TableHead>
-                <TableHead>Tył</TableHead>
-                <TableHead>Źródło</TableHead>
-                <TableHead>Data utworzenia</TableHead>
-                <TableHead className="w-[100px]">Akcje</TableHead>
+                <TableHead>Front</TableHead>
+                <TableHead>Back</TableHead>
+                <TableHead>Source</TableHead>
+                <TableHead>Date created</TableHead>
+                <TableHead className="w-[100px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -221,11 +221,11 @@ export function FlashcardsDataTable({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Przód</TableHead>
-                <TableHead>Tył</TableHead>
-                <TableHead>Źródło</TableHead>
-                <TableHead>Data utworzenia</TableHead>
-                <TableHead className="w-[100px]">Akcje</TableHead>
+                <TableHead>Front</TableHead>
+                <TableHead>Back</TableHead>
+                <TableHead>Source</TableHead>
+                <TableHead>Date created</TableHead>
+                <TableHead className="w-[100px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -233,10 +233,10 @@ export function FlashcardsDataTable({
                 <TableCell colSpan={5} className="h-24 text-center">
                   <div className="flex flex-col items-center justify-center space-y-2">
                     <p className="text-muted-foreground">
-                      Nie znaleziono fiszek.
+                      No flashcards found.
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      Dodaj swoją pierwszą fiszkę!
+                      Add your first flashcard!
                     </p>
                   </div>
                 </TableCell>
@@ -254,11 +254,11 @@ export function FlashcardsDataTable({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Przód</TableHead>
-              <TableHead>Tył</TableHead>
-              <TableHead>Źródło</TableHead>
-              <TableHead>Data utworzenia</TableHead>
-              <TableHead className="w-[100px]">Akcje</TableHead>
+              <TableHead>Front</TableHead>
+              <TableHead>Back</TableHead>
+              <TableHead>Source</TableHead>
+              <TableHead>Date created</TableHead>
+              <TableHead className="w-[100px]">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

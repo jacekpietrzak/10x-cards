@@ -14,7 +14,7 @@ export function FlashcardsToolbar({
     <div className="flex items-center justify-between">
       <div className="space-y-1">
         <h2 className="text-sm font-medium text-muted-foreground">
-          Zarządzaj swoimi fiszkami
+          Manage your flashcards
         </h2>
       </div>
       <Button
@@ -23,7 +23,7 @@ export function FlashcardsToolbar({
         disabled={isOperationInProgress}
       >
         <Plus className="h-4 w-4" />
-        Dodaj fiszkę
+        Add flashcard
       </Button>
     </div>
   );

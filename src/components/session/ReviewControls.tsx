@@ -13,34 +13,34 @@ export function ReviewControls({
   const ratings = [
     {
       grade: 1 as FSRSGrade,
-      label: "Znowu",
+      label: "Again",
       variant: "destructive" as const,
-      description: "Nie pamiętam",
+      description: "Don't remember",
     },
     {
       grade: 2 as FSRSGrade,
-      label: "Trudne",
+      label: "Hard",
       variant: "secondary" as const,
-      description: "Pamiętam z trudem",
+      description: "Barely remember",
     },
     {
       grade: 3 as FSRSGrade,
-      label: "Dobre",
+      label: "Good",
       variant: "default" as const,
-      description: "Pamiętam dobrze",
+      description: "Remember well",
     },
     {
       grade: 4 as FSRSGrade,
-      label: "Łatwe",
+      label: "Easy",
       variant: "default" as const,
-      description: "Pamiętam bez problemu",
+      description: "Remember perfectly",
     },
   ];
 
   return (
-    <div className="space-y-4" role="region" aria-label="Ocena fiszki">
+    <div className="space-y-4" role="region" aria-label="Flashcard rating">
       <p className="text-center text-muted-foreground" id="rating-instructions">
-        Jak dobrze pamiętasz tę odpowiedź?
+        How well do you remember this answer?
       </p>
       <div
         className="grid grid-cols-2 md:grid-cols-4 gap-3"
@@ -54,15 +54,15 @@ export function ReviewControls({
             onClick={() => onRate(grade)}
             disabled={isLoading}
             className="flex flex-col h-auto py-3 px-2"
-            aria-label={`${label}: ${description}. Naciśnij ${
+            aria-label={`${label}: ${description}. Press ${
               index + 1
-            } na klawiaturze`}
+            } on keyboard`}
           >
             <span className="font-semibold text-sm">{label}</span>
             <span className="text-xs opacity-80 text-center leading-tight mt-1">
               {description}
             </span>
-            <span className="sr-only">Klawisz {index + 1}</span>
+            <span className="sr-only">Key {index + 1}</span>
           </Button>
         ))}
       </div>

@@ -144,16 +144,16 @@ export default function FlashcardsPageClient() {
 
       // Show success toast
       if (id) {
-        toast.success("Fiszka została zaktualizowana");
+        toast.success("Flashcard has been updated");
       } else {
-        toast.success("Nowa fiszka została dodana");
+        toast.success("New flashcard has been added");
       }
     } catch (err) {
       const errorMessage =
         err instanceof Error
           ? err.message
-          : "Wystąpił błąd podczas zapisywania";
-      toast.error(`Błąd: ${errorMessage}`);
+          : "An error occurred while saving";
+      toast.error(`Error: ${errorMessage}`);
       console.error("Error saving flashcard:", err);
     }
   };
@@ -177,14 +177,14 @@ export default function FlashcardsPageClient() {
       await fetchFlashcards(pagination.page, pagination.limit);
 
       // Show success toast
-      toast.success("Fiszka została usunięta");
+      toast.success("Flashcard has been deleted");
 
       // Close dialog after successful operation
       setDeletingFlashcardId(null);
     } catch (err) {
       const errorMessage =
-        err instanceof Error ? err.message : "Wystąpił błąd podczas usuwania";
-      toast.error(`Błąd: ${errorMessage}`);
+        err instanceof Error ? err.message : "An error occurred while deleting";
+      toast.error(`Error: ${errorMessage}`);
       console.error("Error deleting flashcard:", err);
       setDeletingFlashcardId(null);
     } finally {
@@ -203,15 +203,15 @@ export default function FlashcardsPageClient() {
     return (
       <div className="container mx-auto py-6">
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Moje fiszki</h1>
+          <h1 className="text-2xl font-bold mb-4">My Flashcards</h1>
           <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-            <div className="text-red-600 font-medium mb-2">Wystąpił błąd</div>
+            <div className="text-red-600 font-medium mb-2">An error occurred</div>
             <div className="text-red-600 text-sm mb-4">{error}</div>
             <button
               onClick={() => fetchFlashcards(pagination.page, pagination.limit)}
               className="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-200 cursor-pointer hover:shadow-md"
             >
-              Spróbuj ponownie
+              Try again
             </button>
           </div>
         </div>
@@ -222,9 +222,9 @@ export default function FlashcardsPageClient() {
   return (
     <div className="container mx-auto space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Moje fiszki</h1>
+        <h1 className="text-2xl font-bold">My Flashcards</h1>
         <p className="text-muted-foreground">
-          Zarządzaj swoimi fiszkami - dodawaj, edytuj i usuwaj.
+          Manage your flashcards - add, edit and delete.
         </p>
       </div>
 

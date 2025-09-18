@@ -28,7 +28,7 @@ export function SessionSummary({
     <div className="container mx-auto max-w-4xl p-6">
       <Card>
         <CardHeader>
-          <CardTitle>Sesja zakończona!</CardTitle>
+          <CardTitle>Session finished!</CardTitle>
         </CardHeader>
         <CardContent className="text-center space-y-4">
           <div className="text-6xl font-bold text-primary mb-4">
@@ -36,12 +36,12 @@ export function SessionSummary({
           </div>
           <p className="text-lg text-muted-foreground">
             {reviewedCount === 1
-              ? "Powtórzyłeś 1 fiszkę"
-              : `Powtórzyłeś ${reviewedCount} fiszek`}
+              ? "You reviewed 1 flashcard"
+              : `You reviewed ${reviewedCount} flashcards`}
           </p>
           <p className="text-muted-foreground">
-            Świetna robota! Regularne powtórki pomagają w lepszym
-            zapamiętywaniu.
+            Great job! Regular reviews help with better
+            retention.
           </p>
           <div className="flex gap-4 justify-center pt-4">
             <Button
@@ -52,17 +52,17 @@ export function SessionSummary({
               {isStartingAgain ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Rozpoczynam...
+                  Starting...
                 </>
               ) : (
-                "Rozpocznij ponownie"
+                "Start again"
               )}
             </Button>
             <Button asChild>
-              <Link href="/flashcards">Moje fiszki</Link>
+              <Link href="/flashcards">My flashcards</Link>
             </Button>
             <Button variant="outline" asChild>
-              <Link href="/generate">Wygeneruj nowe fiszki</Link>
+              <Link href="/generate">Generate new flashcards</Link>
             </Button>
           </div>
         </CardContent>

@@ -35,11 +35,11 @@ export function DeleteConfirmationDialog({
         <AlertDialogHeader>
           <AlertDialogTitle className="flex items-center gap-2">
             <Trash2 className="h-5 w-5 text-red-600" />
-            Usuń fiszkę
+            Delete flashcard
           </AlertDialogTitle>
           <AlertDialogDescription>
-            Czy na pewno chcesz usunąć tę fiszkę? Ta akcja nie może być
-            cofnięta. Fiszka zostanie trwale usunięta z Twojej kolekcji.
+            Are you sure you want to delete this flashcard? This action cannot be
+            undone. The flashcard will be permanently removed from your collection.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -48,7 +48,7 @@ export function DeleteConfirmationDialog({
             disabled={isLoading}
             className="cursor-pointer transition-all duration-200 hover:bg-muted hover:scale-105 disabled:pointer-events-none disabled:opacity-50"
           >
-            Anuluj
+            Cancel
           </AlertDialogCancel>
           <AlertDialogAction
             onClick={onConfirm}
@@ -58,12 +58,12 @@ export function DeleteConfirmationDialog({
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Usuwanie...
+                Deleting...
               </>
             ) : (
               <>
                 <Trash2 className="mr-2 h-4 w-4" />
-                Usuń fiszkę
+                Delete flashcard
               </>
             )}
           </AlertDialogAction>

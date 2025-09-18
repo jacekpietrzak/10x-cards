@@ -55,7 +55,7 @@ export function SessionView({
     <div className="container mx-auto space-y-6">
       {/* Progress indicator */}
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Sesja nauki</h1>
+        <h1 className="text-2xl font-bold">Study session</h1>
         <Badge variant="secondary" className="text-sm">
           {progress.current} / {progress.total}
         </Badge>

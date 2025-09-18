@@ -7,17 +7,17 @@ export function NoCardsToReview() {
     <div className="container mx-auto max-w-4xl p-6">
       <Card>
         <CardHeader>
-          <CardTitle>Świetna robota!</CardTitle>
+          <CardTitle>Great job!</CardTitle>
         </CardHeader>
         <CardContent className="text-center space-y-4">
           <p className="text-muted-foreground text-lg">
-            Brak fiszek do powtórki na dzisiaj.
+            No flashcards to review today.
             <br />
-            Wróć jutro, aby kontynuować naukę!
+            Come back tomorrow to continue learning!
           </p>
           <div className="pt-4">
             <Button asChild>
-              <Link href="/flashcards">Przejdź do moich fiszek</Link>
+              <Link href="/flashcards">Go to my flashcards</Link>
             </Button>
           </div>
         </CardContent>

@@ -17,7 +17,7 @@ export default function SessionPageClient() {
       <div className="container mx-auto max-w-4xl">
         <Card>
           <CardHeader>
-            <CardTitle>Ładowanie sesji nauki...</CardTitle>
+            <CardTitle>Loading study session...</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <Skeleton className="h-32 w-full" />
@@ -39,18 +39,18 @@ export default function SessionPageClient() {
       <div className="container mx-auto max-w-4xl">
         <Card>
           <CardHeader>
-            <CardTitle>Błąd podczas ładowania sesji</CardTitle>
+            <CardTitle>Error loading session</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground mb-4">
               {state.error ||
-                "Wystąpił nieoczekiwany błąd. Spróbuj odświeżyć stronę."}
+                "An unexpected error occurred. Try refreshing the page."}
             </p>
             <button
               onClick={() => window.location.reload()}
               className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
             >
-              Odśwież stronę
+              Refresh page
             </button>
           </CardContent>
         </Card>

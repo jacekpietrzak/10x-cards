@@ -16,13 +16,13 @@ export function FlashcardViewer({
   return (
     <Card className="w-full max-w-2xl mx-auto">
       <CardHeader>
-        <CardTitle className="text-center">Fiszka</CardTitle>
+        <CardTitle className="text-center">Flashcard</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Front side */}
         <div className="space-y-2">
           <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
-            Pytanie
+            Question
           </h3>
           <div className="p-4 bg-muted rounded-lg min-h-[80px] flex items-center justify-center">
             <p className="text-lg text-center leading-relaxed">{card.front}</p>
@@ -33,7 +33,7 @@ export function FlashcardViewer({
         {!isAnswerVisible && (
           <div className="text-center">
             <Button onClick={onShowAnswer} size="lg">
-              Pokaż odpowiedź
+              Show answer
             </Button>
           </div>
         )}
@@ -42,7 +42,7 @@ export function FlashcardViewer({
         {isAnswerVisible && (
           <div className="space-y-2">
             <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
-              Odpowiedź
+              Answer
             </h3>
             <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg min-h-[80px] flex items-center justify-center">
               <p className="text-lg text-center leading-relaxed">{card.back}</p>

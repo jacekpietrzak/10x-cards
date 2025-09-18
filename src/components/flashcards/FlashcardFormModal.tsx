@@ -33,12 +33,12 @@ import type {
 const flashcardSchema = z.object({
   front: z
     .string()
-    .min(1, "Pole przód jest wymagane")
-    .max(200, "Przód może mieć maksymalnie 200 znaków"),
+    .min(1, "Front field is required")
+    .max(200, "Front can have a maximum of 200 characters"),
   back: z
     .string()
-    .min(1, "Pole tył jest wymagane")
-    .max(500, "Tył może mieć maksymalnie 500 znaków"),
+    .min(1, "Back field is required")
+    .max(500, "Back can have a maximum of 500 characters"),
 });
 
 type FlashcardFormData = z.infer<typeof flashcardSchema>;
@@ -125,12 +125,12 @@ export function FlashcardFormModal({
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>
-            {isEditing ? "Edytuj fiszkę" : "Dodaj nową fiszkę"}
+            {isEditing ? "Edit flashcard" : "Add new flashcard"}
           </DialogTitle>
           <DialogDescription>
             {isEditing
-              ? "Wprowadź zmiany w swojej fiszce."
-              : "Wypełnij pola, aby utworzyć nową fiszkę."}
+              ? "Make changes to your flashcard."
+              : "Fill in the fields to create a new flashcard."}
           </DialogDescription>
         </DialogHeader>
 
@@ -144,16 +144,16 @@ export function FlashcardFormModal({
               name="front"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Przód fiszki</FormLabel>
+                  <FormLabel>Flashcard front</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="Wprowadź tekst na przód fiszki..."
+                      placeholder="Enter text for the front of the card..."
                       {...field}
                       disabled={isSubmitting}
                     />
                   </FormControl>
                   <div className="text-xs text-muted-foreground">
-                    {field.value.length}/200 znaków
+                    {field.value.length}/200 characters
                   </div>
                   <FormMessage />
                 </FormItem>
@@ -165,17 +165,17 @@ export function FlashcardFormModal({
               name="back"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Tył fiszki</FormLabel>
+                  <FormLabel>Flashcard back</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Wprowadź tekst na tył fiszki..."
+                      placeholder="Enter text for the back of the card..."
                       className="min-h-[100px]"
                       {...field}
                       disabled={isSubmitting}
                     />
                   </FormControl>
                   <div className="text-xs text-muted-foreground">
-                    {field.value.length}/500 znaków
+                    {field.value.length}/500 characters
                   </div>
                   <FormMessage />
                 </FormItem>
@@ -190,7 +190,7 @@ export function FlashcardFormModal({
                 disabled={isSubmitting}
                 className="cursor-pointer transition-all duration-200 hover:bg-muted hover:scale-105 disabled:pointer-events-none disabled:opacity-50"
               >
-                Anuluj
+                Cancel
               </Button>
               <Button
                 type="submit"
@@ -200,12 +200,12 @@ export function FlashcardFormModal({
                 {isSubmitting ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Zapisywanie...
+                    Saving...
                   </>
                 ) : isEditing ? (
-                  "Zapisz zmiany"
+                  "Save changes"
                 ) : (
-                  "Dodaj fiszkę"
+                  "Add flashcard"
                 )}
               </Button>
             </DialogFooter>
