@@ -30,11 +30,11 @@ describe("FlashcardViewer Component", () => {
         card={mockCard}
         isAnswerVisible={false}
         onShowAnswer={mockOnShowAnswer}
-      />,
+      />
     );
     expect(screen.getByText("Test Question")).toBeInTheDocument();
     expect(screen.queryByText("Test Answer")).not.toBeInTheDocument();
-    expect(screen.getByText("Pokaż odpowiedź")).toBeInTheDocument();
+    expect(screen.getByText("Show answer")).toBeInTheDocument();
   });
 
   it("should show back side when answer is visible", () => {
@@ -43,12 +43,12 @@ describe("FlashcardViewer Component", () => {
         card={mockCard}
         isAnswerVisible={true}
         onShowAnswer={mockOnShowAnswer}
-      />,
+      />
     );
 
     expect(screen.getByText("Test Question")).toBeInTheDocument();
     expect(screen.getByText("Test Answer")).toBeInTheDocument();
-    expect(screen.queryByText("Pokaż odpowiedź")).not.toBeInTheDocument();
+    expect(screen.queryByText("Show answer")).not.toBeInTheDocument();
   });
 
   it("should call onShowAnswer when button is clicked", () => {
@@ -57,10 +57,10 @@ describe("FlashcardViewer Component", () => {
         card={mockCard}
         isAnswerVisible={false}
         onShowAnswer={mockOnShowAnswer}
-      />,
+      />
     );
 
-    const showAnswerButton = screen.getByText("Pokaż odpowiedź");
+    const showAnswerButton = screen.getByText("Show answer");
     fireEvent.click(showAnswerButton);
 
     expect(mockOnShowAnswer).toHaveBeenCalledTimes(1);
@@ -72,7 +72,7 @@ describe("FlashcardViewer Component", () => {
         card={mockCard}
         isAnswerVisible={true}
         onShowAnswer={mockOnShowAnswer}
-      />,
+      />
     );
 
     expect(screen.getByText("Pytanie")).toBeInTheDocument();
