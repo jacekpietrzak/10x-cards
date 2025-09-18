@@ -75,7 +75,7 @@ describe("FlashcardViewer Component", () => {
       />
     );
 
-    expect(screen.getByText("Pytanie")).toBeInTheDocument();
-    expect(screen.getByText("Odpowiedź")).toBeInTheDocument();
+    expect(screen.getByText("Question")).toBeInTheDocument();
+    expect(screen.getByText("Answer")).toBeInTheDocument();
   });
 });
