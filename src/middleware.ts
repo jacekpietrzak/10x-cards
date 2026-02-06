@@ -11,7 +11,7 @@ const PUBLIC_PATHS = [
 ];
 
 // Define API routes that should be publicly accessible
-const PUBLIC_API_PATHS = ["/api/auth"];
+const PUBLIC_API_PATHS = ["/api/auth", "/api/health"];
 
 export async function middleware(request: NextRequest) {
   try {
