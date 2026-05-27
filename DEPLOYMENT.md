@@ -34,6 +34,36 @@ Aby uruchomić pipeline deployment, musisz skonfigurować następujące sekrety 
 6. **OPENROUTER_API_KEY**
    - Klucz API OpenRouter do komunikacji z modelami AI
 
+## Zmienne środowiskowe endpointu importu (Vercel)
+
+Endpoint `POST /api/import` (programatyczny import fiszek bez sesji przeglądarki) odczytuje trzy zmienne w czasie działania (runtime). W odróżnieniu od powyższych sekretów GitHub, te zmienne ustaw **bezpośrednio w panelu Vercel** → Project → Settings → Environment Variables, ze scope **Production** — krok `vercel pull --environment=production` w pipeline pobiera je do deploymentu, a funkcje serwerowe czytają je z konfiguracji projektu Vercel.
+
+- **IMPORT_API_KEY**
+  - Statyczny token bearer chroniący endpoint (`Authorization: Bearer <IMPORT_API_KEY>`)
+  - Wygeneruj losowy sekret: `openssl rand -hex 32`
+  - To entropia tego klucza jest faktyczną granicą bezpieczeństwa — trzymaj w tajemnicy, rotuj przez podmianę wartości
+- **IMPORT_USER_ID**
+  - UUID konta, do którego trafiają importowane fiszki
+  - Znajdź w Supabase → Authentication → Users (lub `select id from auth.users where email = '...'`)
+- **SUPABASE_SERVICE_ROLE_KEY**
+  - Klucz service-role Supabase — **omija RLS, nigdy nie eksponuj po stronie klienta**
+  - Wymagany przez `createAdminClient()`, który zapisuje fiszki w imieniu `IMPORT_USER_ID`
+
+**Redeploy:** zmiany zmiennych w panelu Vercel wchodzą w życie przy kolejnym uruchomieniu workflow „Production Deployment" (push do `main` lub ponowne uruchomienie joba), ponieważ `vercel pull` pobiera aktualne wartości na starcie deploymentu. W tym projekcie nie ma osobnego „redeploy" z panelu Vercel.
+
+**Tylko Production:** ustaw te sekrety wyłącznie w scope Production. Deploymenty preview pozostaną bez kluczy i będą zwracać 401/500 (fail-closed) zamiast działać z błędną konfiguracją.
+
+Smoke test po deployu (idempotencja insert → update):
+
+```bash
+curl -X POST https://10x-cards.jackpietrzak.com/api/import \
+  -H "Authorization: Bearer <IMPORT_API_KEY>" \
+  -H "Content-Type: application/json" \
+  -d '{"cards":[{"front":"ping","back":"pong"}]}'
+# oczekiwane: {"inserted":1,"updated":0}
+# ponowne wywołanie z tym samym front: {"inserted":0,"updated":1}
+```
+
 ## Konfiguracja Environment w GitHub
 
 Pipeline używa environment o nazwie `production` dla większego bezpieczeństwa. Skonfiguruj go w GitHub:
