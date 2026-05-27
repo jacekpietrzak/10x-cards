@@ -10,8 +10,12 @@ const PUBLIC_PATHS = [
   "/reset-password",
 ];
 
-// Define API routes that should be publicly accessible
-const PUBLIC_API_PATHS = ["/api/auth", "/api/health"];
+// Define API routes that should be publicly accessible.
+// "Public" here only means the middleware doesn't gate them; /api/import is
+// still protected by its own bearer-token check in the route handler (it must
+// be listed here so cookieless machine requests reach the handler instead of
+// being 307-redirected to /login).
+const PUBLIC_API_PATHS = ["/api/auth", "/api/health", "/api/import"];
 
 export async function middleware(request: NextRequest) {
   try {
