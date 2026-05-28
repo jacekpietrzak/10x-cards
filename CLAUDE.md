@@ -151,7 +151,15 @@ NEXT_PUBLIC_SUPABASE_URL
 NEXT_PUBLIC_SUPABASE_ANON_KEY
 OPENROUTER_API_KEY
 SUPABASE_SERVICE_ROLE_KEY (for admin operations)
+IMPORT_API_KEY              (for POST /api/import — Production only)
+IMPORT_USER_ID              (for POST /api/import — Production only)
 ```
+
+## Deployment
+
+Deploys are driven by `.github/workflows/master.yml` on push to `main`: Lint → Unit Tests → Build → Deploy. The deploy job runs `vercel pull --environment=production` → `vercel build --prod` → `vercel deploy --prebuilt --prod`. Artifacts are produced inside GitHub Actions and handed to Vercel as a prebuilt bundle. See `DEPLOYMENT.md` for the full deploy procedure, env-var setup, and `/api/import` smoke test.
+
+**Critical AI-assistant gotcha — env-var refreshes:** Because deploys are `--prebuilt`, Vercel's "Redeploy" button does **not** pick up env-var changes — Vercel actively blocks it ("Prebuilt deployments cannot be redeployed because they will not use the latest environment variables and project settings."). To refresh env vars in production, push a commit (use `git commit --allow-empty -m "chore: trigger redeploy" && git push` if no code changed) so the workflow re-runs `vercel pull` with the latest values. Watch deploy progress in the **GitHub Actions** tab, not Vercel Deployments.
 
 ## Testing
 
