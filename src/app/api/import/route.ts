@@ -1,32 +1,17 @@
-import { createHash, timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
+import { isAuthorizedImportRequest } from "@/lib/auth/import-auth";
 import { importRequestSchema } from "@/lib/schemas/import";
 import { processImportRequest } from "@/lib/services/flashcards.service";
 import { createAdminClient } from "@/utils/supabase/admin";
 
-// node:crypto (constant-time compare) and the service-role client both require
-// the Node.js runtime, not the Edge runtime.
+// node:crypto (constant-time compare, via the import-auth helper) and the
+// service-role client both require the Node.js runtime, not the Edge runtime.
 export const runtime = "nodejs";
 
 // The patch phase runs sequentially (~2 round trips per patch), so a request at
 // the 100-patch cap can outlast the default timeout. Realistic diffs are a few
 // ops; this ceiling only exists so the cap cannot 504.
 export const maxDuration = 60;
-
-/**
- * Constant-time comparison of two secrets.
- *
- * Both values are hashed to fixed-length SHA-256 digests before comparing:
- * `timingSafeEqual` throws on unequal-length buffers, and length-guarding raw
- * tokens would leak the key length. Hashing to a fixed 32 bytes removes both
- * problems. The real security boundary is the entropy of IMPORT_API_KEY; this
- * is defense-in-depth.
- */
-function secretsMatch(provided: string, expected: string): boolean {
-  const providedHash = createHash("sha256").update(provided).digest();
-  const expectedHash = createHash("sha256").update(expected).digest();
-  return timingSafeEqual(providedHash, expectedHash);
-}
 
 /**
  * POST /api/import
@@ -63,13 +48,7 @@ function secretsMatch(provided: string, expected: string): boolean {
  */
 export async function POST(request: Request) {
   // 1. Auth — fail closed. A missing IMPORT_API_KEY rejects everything.
-  const expectedKey = process.env.IMPORT_API_KEY;
-  const authHeader = request.headers.get("authorization");
-  const token = authHeader?.startsWith("Bearer ")
-    ? authHeader.slice("Bearer ".length)
-    : null;
-
-  if (!expectedKey || !token || !secretsMatch(token, expectedKey)) {
+  if (!isAuthorizedImportRequest(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
