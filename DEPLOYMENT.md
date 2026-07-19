@@ -65,6 +65,17 @@ Odpowiedź ma zawsze pięć pól: `{"inserted":N,"updated":N,"deleted":N,"patche
 
 **Łańcuchy rename** (`A→B` gdy jednocześnie `B→C`) są zależne od kolejności w payloadzie: układaj je od ogona (`B→C` przed `A→B`) albo zaakceptuj konwergencję przy drugim wysłaniu tego samego diffa — pominięty patch zostanie zastosowany przy retry. Operacje są idempotentne; po HTTP 500 (możliwy częściowy zapis) bezpiecznym recovery jest ponowne wysłanie tego samego diffa.
 
+### Kontrakt endpointu odczytu (GET)
+
+`GET /api/import` — maszynowy odczyt aktualnego stanu (ten sam bearer `IMPORT_API_KEY`), którym zewnętrzny caller (life-os) diffuje prod względem swojego źródła prawdy. Zwraca wyłącznie karty `source='manual'` użytkownika `IMPORT_USER_ID` — karty AI (`ai-full`, `ai-edited`) nigdy nie są zwracane, filtr nie jest konfigurowalny (brak query params).
+
+Odpowiedź ma zawsze trzy pola: `{"cards":[{"front","back"}],"count":N,"truncated":bool}` — karty w kolejności DB (sortowanie po stronie klienta), bez id, stanu FSRS i timestampów. Miękki limit 500 wierszy: powyżej zwracane jest pierwsze 500 z `truncated:true`. Pusty wynik to 200 z `{"cards":[],"count":0,"truncated":false}`, nigdy 4xx. Błędy: 401 (auth, jak POST), 500 (błąd DB / brak konfiguracji).
+
+```bash
+curl -H "Authorization: Bearer <IMPORT_API_KEY>" \
+  https://10x-cards.jackpietrzak.com/api/import
+```
+
 ### Smoke test po deployu
 
 Pełny cykl CRUD (auth → upsert → walidacja → patch → konflikt rename → delete) sprawdza skrypt, który **sprząta po sobie** (nie zostawia wierszy testowych):

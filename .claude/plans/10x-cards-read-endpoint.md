@@ -40,11 +40,11 @@ Out of scope: pagination beyond the 500 soft cap, sorting, filtering params, exp
 
 | Step | Title | Scope | Effort | Schema change? | Depends on | Status |
 |---|---|---|---|---|---|---|
-| 1 | Extract bearer-auth helper to `src/lib/auth/import-auth.ts` | auth | 30 min | No | — | Pending |
-| 2 | Service: `listManualFlashcards` | services | 30 min | No | — | Pending |
-| 3 | Route: `GET /api/import` handler | API | 30 min | No | 1, 2 | Pending |
-| 4 | Tests: service unit + route unit/integration | tests | 1.5 h | No | 3 | Pending |
-| 5 | Docs note, deploy, prod smoke | docs/deploy | 30 min | No | 4 | Pending |
+| 1 | Extract bearer-auth helper to `src/lib/auth/import-auth.ts` | auth | 30 min | No | — | Shipped (2026-07-20) |
+| 2 | Service: `listManualFlashcards` | services | 30 min | No | — | Shipped (2026-07-20) |
+| 3 | Route: `GET /api/import` handler | API | 30 min | No | 1, 2 | Shipped (2026-07-20) |
+| 4 | Tests: service unit + route unit/integration | tests | 1.5 h | No | 3 | Shipped (2026-07-20) |
+| 5 | Docs note, deploy, prod smoke | docs/deploy | 30 min | No | 4 | In progress |
 
 Steps are small enough to ship in one session with one commit per step (matching the CRUD-plan discipline: lint + full test suite green before each commit).
 
@@ -53,6 +53,8 @@ Steps are small enough to ship in one session with one commit per step (matching
 **2026-07-19 — Plan created.** Plan drafted via `/plan-interview` (lite, autonomous — contract fully locked by the task spec; the three genuinely open micro-decisions resolved above). Ready for `/plan-review` (single pass per spec) before implementation begins. **Up next:** step 1.
 
 **2026-07-19 — /plan-review pass (verdict: GO).** Codebase-verified. One WARNING folded into Step 4: both test mocks need concrete read-path extensions (select-arg/limit capture in the unit mock; select-op data + count in the integration mock). Verified clean: middleware allowlist at [middleware.ts:18](src/middleware.ts#L18) is path-based so GET passes untouched; Next 15 GET handlers are uncached by default and reading the Authorization header forces dynamic rendering, so no `force-dynamic` export is needed; auth extraction keeps route tests green (they drive auth via env + headers, not mocks). Implementation may begin. **Up next:** step 1.
+
+**2026-07-20 — Steps 1–4 shipped (one session, one commit each).** Step 1 (509bf73): [import-auth.ts](src/lib/auth/import-auth.ts) with `isAuthorizedImportRequest`; `secretsMatch` moved byte-identical; POST rewired, 107/107 tests unmodified. Step 2 (788a529): [listManualFlashcards](src/lib/services/flashcards.service.ts) per Decision 1 (`count: "exact"` + `MANUAL_LIST_CAP = 500`). Step 3 (14ad553): GET handler mirroring POST's auth/config/error structure; `npm run build` green. Step 4 (f1aa885): both mocks extended exactly per the review spec; 5 service-unit + 8 route-unit + 5 integration tests added — 125/125 total, lint clean. No deviations beyond the two planned micro-deviations (param order, `Request` type). **Up next:** step 5.
 
 ## Step details
 
