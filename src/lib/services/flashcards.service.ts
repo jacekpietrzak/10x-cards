@@ -737,3 +737,57 @@ export async function processImportRequest(
 
   return { inserted, updated, deleted, patched, skipped_patches };
 }
+
+// Soft cap for the machine-read endpoint — a safety net, not pagination. The
+// realistic ceiling for manual cards is <100; past 500 the response reports
+// `truncated: true` and the caller decides what to do.
+const MANUAL_LIST_CAP = 500;
+
+/**
+ * Lists manual flashcards for the import user (GET /api/import).
+ *
+ * The read counterpart of the import CRUD phases, sharing their safety
+ * invariant: the query is hard-scoped `.eq("user_id", …).eq("source",
+ * "manual")`, so AI-generated cards (`ai-full`, `ai-edited`) are never
+ * returned. Only `front` and `back` are selected — no ids, FSRS state, or
+ * timestamps — and rows come back in DB order (the external caller sorts if it
+ * needs to).
+ *
+ * A single query fetches up to MANUAL_LIST_CAP rows alongside an exact match
+ * count (same `{ count: "exact" }` pattern as listFlashcards); `truncated`
+ * flags that more rows exist than were returned.
+ *
+ * @param userId - The single import user; the tenant scope for the query.
+ * @param supabase - A service-role Supabase client.
+ *
+ * @returns `cards` (front/back pairs), `count` (rows returned), `truncated`.
+ * @throws Rethrows any Supabase error (the route translates it to 500).
+ */
+export async function listManualFlashcards(
+  userId: string,
+  supabase: SupabaseClient<Database>,
+): Promise<{
+  cards: { front: string; back: string }[];
+  count: number;
+  truncated: boolean;
+}> {
+  const { data, error, count } = await supabase
+    .from("flashcards")
+    .select("front, back", { count: "exact" })
+    .eq("user_id", userId)
+    .eq("source", "manual")
+    .limit(MANUAL_LIST_CAP);
+
+  if (error) {
+    // Do not log card contents — the error object alone is enough to debug.
+    console.error("Error listing manual flashcards:", error);
+    throw new Error(error.message || "Failed to list manual flashcards");
+  }
+
+  const cards = data ?? [];
+  return {
+    cards,
+    count: cards.length,
+    truncated: (count ?? 0) > MANUAL_LIST_CAP,
+  };
+}
