@@ -186,3 +186,34 @@ Acceptance: script exits 0 against a local/dev environment; leaves zero residual
 - Multi-user API-key tables (still single-user via `IMPORT_USER_ID`).
 - Card ID exposure in the API (life-os matches by front).
 - Transactional atomicity via Postgres RPC (revisit only if partial-write 500s are observed in practice).
+
+## Retrospective
+
+**Date:** 2026-07-19
+**Total steps:** 5
+**Duration:** 2026-07-19 to 2026-07-19 (single day, fresh chat per step)
+
+### What worked
+
+- **Front-loading review before implementation.** Three /plan-review passes before any code converged fast — pass 1 found the only substantive defects (`.limit(1).maybeSingle()`, substep 3.1's test adaptation), passes 2–3 added only precision notes. Result: zero REWORK verdicts across all five implementation sessions.
+- **Throwaway verification per step, promoted later.** Steps 2 and 3 each ran a disposable test file (mock-driven, then integration-shaped) deleted before commit; Step 4 promoted the integration shape into permanent coverage ([route.integration.test.ts](src/app/api/import/__tests__/route.integration.test.ts)). Cheap confidence early, no premature test debt.
+- **Transitional-shim discipline.** Step 1's `cards ?? []` shim kept every per-step commit CI-green (Lint → Unit Tests → Build → Deploy blocks on red), with its removal explicitly scheduled and executed in Step 3.
+- **Verifying instead of assuming.** PostgREST `.delete().select()` semantics checked against installed typings + repo precedent; smoke-script `grep -qF` compatibility read from the script, not guessed; prod data queried for duplicate fronts; Step 5 closed with a real local end-to-end run (trigger firing, `ai-full` immunity) instead of stopping at the contract stub.
+
+### What didn't
+
+- **"Local Supabase is down" persisted as an assumption across sessions.** Real-DB verification was deferred plan-wide to Step 5 — where it turned out Docker Desktop just needed launching (engine up in ~5s). Should have been probed in Step 2, which would have de-risked the service layer on real Postgres immediately.
+- **The plan initially missed the mocked-seam blast radius.** Rewiring the route would have broken the existing `vi.mock(importFlashcards)` tests and blocked CI; caught by review pass 1 (became substep 3.1), but /plan-interview should have read the existing test mocks when drafting Step 3.
+
+### Surprises
+
+- **No unique constraint on `(user_id, front)`** — the load-bearing `.limit(1).maybeSingle()` requirement came entirely from review archaeology of the migration, not from the brief or the schema docs.
+- **Backward compatibility was nearly free** — the legacy smoke script's `grep -qF` substring matching plus `NextResponse.json` preserving literal key order meant the five-field response needed only key-order pinning, no versioning.
+- **Rename-chain order dependence** (`[A→B, B→C]` skips vs `[B→C, A→B]` applies both) emerged during Step 2 review — accepted because idempotent retry converges, but it wasn't anticipated by any pre-implementation pass.
+
+### Lessons for next plan
+
+- Keep the 2–3 review passes **before** implementation; convergence was visible by pass 3 (diminishing findings) — don't run more.
+- Probe dev-environment availability (docker, local stack) during planning, not at the last step; "environment down" recorded once should be re-tested, not inherited.
+- When a step changes a mocked seam, plan the test adaptation as a substep of that same step (the 3.1 pattern), never as part of the later "tests" step.
+- Idempotency-over-atomicity (Decision 3) is the right trade for single-writer diff pipelines — reusable pattern: make every operation converge on retry, then a 500 needs no rollback story.
