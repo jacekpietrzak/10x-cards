@@ -53,15 +53,38 @@ Endpoint `POST /api/import` (programatyczny import fiszek bez sesji przeglądark
 
 **Tylko Production:** ustaw te sekrety wyłącznie w scope Production. Deploymenty preview pozostaną bez kluczy i będą zwracać 401/500 (fail-closed) zamiast działać z błędną konfiguracją.
 
-Smoke test po deployu (idempotencja insert → update):
+### Kontrakt endpointu (pełny CRUD)
+
+Żądanie przyjmuje trzy opcjonalne tablice (co najmniej jedna niepusta, max 100 wpisów każda; `delete_fronts` musi być rozłączne z `cards[].front` i `patches[].old_front` — nakładanie się to 400), przetwarzane w kolejności **delete → patch → upsert**:
+
+- `cards: [{front, back}]` — upsert po `front` (zachowanie historyczne, bez zmian)
+- `delete_fronts: [front]` — usuwa wyłącznie wiersze `source='manual'`
+- `patches: [{old_front, new_front, new_back}]` — rename w miejscu (zachowuje id wiersza i stan FSRS), wyłącznie `source='manual'`
+
+Odpowiedź ma zawsze pięć pól: `{"inserted":N,"updated":N,"deleted":N,"patched":N,"skipped_patches":[...]}`. Pomijane patche lądują w `skipped_patches` z `reason`: `old_front_not_found` (brak wiersza manual o `old_front`) lub `new_front_conflict` (inny wiersz już ma `new_front`). Karty AI (`ai-full`, `ai-edited`) są nieosiągalne przez delete/patch.
+
+**Łańcuchy rename** (`A→B` gdy jednocześnie `B→C`) są zależne od kolejności w payloadzie: układaj je od ogona (`B→C` przed `A→B`) albo zaakceptuj konwergencję przy drugim wysłaniu tego samego diffa — pominięty patch zostanie zastosowany przy retry. Operacje są idempotentne; po HTTP 500 (możliwy częściowy zapis) bezpiecznym recovery jest ponowne wysłanie tego samego diffa.
+
+### Smoke test po deployu
+
+Pełny cykl CRUD (auth → upsert → walidacja → patch → konflikt rename → delete) sprawdza skrypt, który **sprząta po sobie** (nie zostawia wierszy testowych):
+
+```bash
+scripts/import-smoke-test.sh \
+  https://10x-cards.jackpietrzak.com/api/import \
+  "<IMPORT_API_KEY>"
+```
+
+Szybki check ręczny (idempotencja insert → update):
 
 ```bash
 curl -X POST https://10x-cards.jackpietrzak.com/api/import \
   -H "Authorization: Bearer <IMPORT_API_KEY>" \
   -H "Content-Type: application/json" \
   -d '{"cards":[{"front":"ping","back":"pong"}]}'
-# oczekiwane: {"inserted":1,"updated":0}
-# ponowne wywołanie z tym samym front: {"inserted":0,"updated":1}
+# oczekiwane: {"inserted":1,"updated":0,"deleted":0,"patched":0,"skipped_patches":[]}
+# ponowne wywołanie z tym samym front: {"inserted":0,"updated":1,...}
+# sprzątanie: -d '{"delete_fronts":["ping"]}' → {"...","deleted":1,...}
 ```
 
 ## Konfiguracja Environment w GitHub
