@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 #
-# Smoke test for POST /api/import.
+# Smoke test for POST /api/import (full CRUD).
 #
 # Exercises every documented contract path: bearer auth (no token, wrong token,
 # correct token), upsert classification (insert vs. update), quote-in-front
-# idempotency (the .eq() quote-safe guard), and Zod rejection (oversized back).
+# idempotency (the .eq() quote-safe guard), Zod rejection (oversized back),
+# patch (rename preserving row id), rename-conflict skip (skipped_patches),
+# and delete via delete_fronts.
 #
 # Usage:
 #   scripts/import-smoke-test.sh <URL> <KEY>
@@ -15,10 +17,11 @@
 #     "$(cat ~/.secrets/10x-cards-import-key)"
 #
 # Exits 0 on full success; exits 1 on the first unexpected response and prints
-# which check failed. Leaves 3 test rows in the target environment under fronts
-# matching "smoke-test-<unix-timestamp>" (one of them with embedded quotes);
-# delete them from the app UI if you ran against prod, or wipe local flashcards
-# if local.
+# which check failed. Cleans up after itself: the final checks delete every row
+# the run created via delete_fronts and prove zero residue with an idempotent
+# re-delete, so no manual UI cleanup is needed. (Only exception: an early exit 1
+# mid-run can leave up to 2 rows under fronts matching
+# "smoke-test-<unix-timestamp>" — delete those from the app UI.)
 
 set -euo pipefail
 
@@ -82,13 +85,24 @@ BIG=$(printf 'a%.0s' $(seq 1 501))
 expect "6. oversized back (501 chars) → 400" "400" '"too_big"' \
   "$(post "Authorization: Bearer $KEY" "{\"cards\":[{\"front\":\"$FRONT-big\",\"back\":\"$BIG\"}]}")"
 
+expect "7. patch (rename + new back) → patched:1" "200" '"patched":1' \
+  "$(post "Authorization: Bearer $KEY" "{\"patches\":[{\"old_front\":\"$FRONT\",\"new_front\":\"$FRONT-renamed\",\"new_back\":\"v3\"}]}")"
+
+expect "8. conflicting rename → skipped with new_front_conflict, patched:0" "200" '"new_front_conflict"' \
+  "$(post "Authorization: Bearer $KEY" "{\"patches\":[{\"old_front\":\"$QFRONT\",\"new_front\":\"$FRONT-renamed\",\"new_back\":\"x\"}]}")"
+
+expect "9. delete both smoke rows → deleted:2 (self-cleanup)" "200" '"deleted":2' \
+  "$(post "Authorization: Bearer $KEY" "{\"delete_fronts\":[\"$FRONT-renamed\",\"$QFRONT\"]}")"
+
+expect "10. re-delete same fronts → deleted:0 (idempotent, zero residue)" "200" '"deleted":0' \
+  "$(post "Authorization: Bearer $KEY" "{\"delete_fronts\":[\"$FRONT-renamed\",\"$QFRONT\"]}")"
+
 cat <<EOF
 
-✅ All 6 contract checks passed.
+✅ All 10 contract checks passed.
 
-NOTE: This run wrote 2 test rows to the target environment:
-  - front: $FRONT
-  - front: What is "FSRS"? $FRONT
-The "$FRONT-big" oversized card was correctly rejected (400) and never written.
-Delete the two written rows from the app UI (or local DB) when you don't need them.
+This run cleaned up after itself: both written rows ("$FRONT-renamed" and the
+quote-in-front row) were deleted via delete_fronts in check 9, and check 10
+proved zero residue. The "$FRONT-big" oversized card was correctly rejected
+(400) and never written. No manual cleanup needed.
 EOF
