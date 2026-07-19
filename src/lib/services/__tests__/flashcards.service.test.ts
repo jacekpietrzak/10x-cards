@@ -1,7 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/db/database.types";
-import { importFlashcards } from "../flashcards.service";
+import {
+  importFlashcards,
+  deleteManualFlashcards,
+  patchManualFlashcards,
+  processImportRequest,
+} from "../flashcards.service";
 
 /**
  * Records one recorded `.eq(col, val)` filter on a query chain.
@@ -23,6 +28,13 @@ interface MockOptions {
   insertError?: { message: string } | null;
   /** Force an `.update()` to return an error. */
   updateError?: { message: string } | null;
+  /**
+   * Maps a `front` to the rows a `.delete().select("id")` chain returns for it
+   * (the real API returns the deleted rows). Unlisted fronts delete nothing.
+   */
+  deleteRowsByFront?: Record<string, { id: number }[]>;
+  /** Force a `.delete()` chain to return an error. */
+  deleteError?: { message: string } | null;
 }
 
 /**
@@ -31,32 +43,50 @@ interface MockOptions {
  * this repo (the existing service test exercises a pure function), so this is
  * built from scratch.
  *
- * Three terminal shapes are supported:
- *  - lookup:  `.from().select().eq().eq().limit().maybeSingle()` → `{ data, error }`
- *  - insert:  `.from().insert(rows)` then awaited                → `{ error }`
- *  - update:  `.from().update(p).eq().eq()` then awaited         → `{ error }`
+ * Four terminal shapes are supported:
+ *  - lookup:  `.from().select().eq()…[.neq()].limit().maybeSingle()` → `{ data, error }`
+ *  - insert:  `.from().insert(rows)` then awaited                    → `{ error }`
+ *  - update:  `.from().update(p).eq()…` then awaited                 → `{ error }`
+ *  - delete:  `.from().delete().eq()×3.select("id")` then awaited    → `{ data, error }`
+ *    (the trailing `.select()` must not overwrite the delete op — it only asks
+ *    PostgREST to return the deleted rows)
  *
  * Each `.from()` returns a fresh builder so parallel lookups don't share state.
- * The builder is thenable so the insert/update chains resolve when awaited,
- * while lookups resolve via the explicit `.maybeSingle()` call.
+ * The builder is thenable so the insert/update/delete chains resolve when
+ * awaited, while lookups resolve via the explicit `.maybeSingle()` call.
+ *
+ * IMPORTANT: filters are RECORDED for assertion, not applied — `maybeSingle()`
+ * resolves purely from the `front` eq value, ignoring `source`/`.neq()`. Assert
+ * safety scoping via the captured eq/neq calls; behavioral filtering is
+ * route.integration.test.ts's job.
+ * `opOrder` records each terminal in execution order, so orchestrator tests can
+ * assert the delete → patch → upsert phase sequence.
  */
 function createMockSupabase(opts: MockOptions = {}) {
   const existingByFront = opts.existingByFront ?? {};
+  const deleteRowsByFront = opts.deleteRowsByFront ?? {};
   const captured = {
     fromTables: [] as string[],
-    lookups: [] as EqCall[][], // eq filters per lookup
+    lookups: [] as { eqCalls: EqCall[]; neqCalls: EqCall[] }[],
     inserts: [] as Record<string, unknown>[][], // rows per insert() call
     updates: [] as { payload: Record<string, unknown>; eqCalls: EqCall[] }[],
+    deletes: [] as { eqCalls: EqCall[] }[],
+    opOrder: [] as string[], // terminal ops in execution order
   };
 
   function makeBuilder() {
     const eqCalls: EqCall[] = [];
-    let op: "select" | "insert" | "update" | null = null;
+    const neqCalls: EqCall[] = [];
+    let op: "select" | "insert" | "update" | "delete" | null = null;
     let updatePayload: Record<string, unknown> = {};
 
     const builder = {
       select() {
-        op = "select";
+        // After .delete(), .select("id") only requests the deleted rows back —
+        // it must not turn the chain into a lookup.
+        if (op === null) {
+          op = "select";
+        }
         return builder;
       },
       insert(rows: Record<string, unknown>[]) {
@@ -69,15 +99,24 @@ function createMockSupabase(opts: MockOptions = {}) {
         updatePayload = payload;
         return builder;
       },
+      delete() {
+        op = "delete";
+        return builder;
+      },
       eq(col: string, val: unknown) {
         eqCalls.push({ col, val });
+        return builder;
+      },
+      neq(col: string, val: unknown) {
+        neqCalls.push({ col, val });
         return builder;
       },
       limit() {
         return builder;
       },
       maybeSingle() {
-        captured.lookups.push([...eqCalls]);
+        captured.lookups.push({ eqCalls: [...eqCalls], neqCalls: [...neqCalls] });
+        captured.opOrder.push("lookup");
         if (opts.lookupError) {
           return Promise.resolve({ data: null, error: opts.lookupError });
         }
@@ -85,17 +124,26 @@ function createMockSupabase(opts: MockOptions = {}) {
         const existing = existingByFront[front] ?? null;
         return Promise.resolve({ data: existing, error: null });
       },
-      // Thenable: only awaited for the insert/update terminal operations.
+      // Thenable: only awaited for the insert/update/delete terminal operations.
       then(
-        onFulfilled: (value: { error: unknown }) => unknown,
+        onFulfilled: (value: { data?: unknown; error: unknown }) => unknown,
         onRejected?: (reason: unknown) => unknown,
       ) {
-        let result: { error: unknown };
+        let result: { data?: unknown; error: unknown };
         if (op === "insert") {
+          captured.opOrder.push("insert");
           result = { error: opts.insertError ?? null };
         } else if (op === "update") {
           captured.updates.push({ payload: updatePayload, eqCalls: [...eqCalls] });
+          captured.opOrder.push("update");
           result = { error: opts.updateError ?? null };
+        } else if (op === "delete") {
+          captured.deletes.push({ eqCalls: [...eqCalls] });
+          captured.opOrder.push("delete");
+          const front = eqCalls.find((c) => c.col === "front")?.val as string;
+          result = opts.deleteError
+            ? { data: null, error: opts.deleteError }
+            : { data: deleteRowsByFront[front] ?? [], error: null };
         } else {
           result = { error: null };
         }
@@ -223,7 +271,7 @@ describe("importFlashcards", () => {
     );
 
     // Every lookup filtered on user_id.
-    for (const eqCalls of captured.lookups) {
+    for (const { eqCalls } of captured.lookups) {
       expect(eqCalls).toEqual(
         expect.arrayContaining([{ col: "user_id", val: USER_ID }]),
       );
@@ -262,7 +310,7 @@ describe("importFlashcards", () => {
       expect.arrayContaining([{ col: "id", val: 99 }]),
     );
     // The lookup used the exact quoted front via .eq (not a mangled .in value).
-    expect(captured.lookups[0]).toEqual(
+    expect(captured.lookups[0].eqCalls).toEqual(
       expect.arrayContaining([{ col: "front", val: frontWithQuote }]),
     );
   });
@@ -289,5 +337,422 @@ describe("importFlashcards", () => {
       importFlashcards([{ front: "f", back: "b" }], USER_ID, client),
     ).rejects.toEqual({ message: "insert boom" });
     expect(errorSpy).toHaveBeenCalled();
+  });
+});
+
+describe("deleteManualFlashcards", () => {
+  let warnSpy: ReturnType<typeof vi.spyOn>;
+  let errorSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    warnSpy.mockRestore();
+    errorSpy.mockRestore();
+  });
+
+  it("deletes per-front and sums returned rows for the exact count (duplicate-front rows all removed)", async () => {
+    const { client, captured } = createMockSupabase({
+      // "Twice" exists as two manual rows (no unique constraint on front);
+      // delete removes both, and the count reflects it.
+      deleteRowsByFront: { Twice: [{ id: 1 }, { id: 2 }], Once: [{ id: 3 }] },
+    });
+
+    const result = await deleteManualFlashcards(["Twice", "Once"], USER_ID, client);
+
+    expect(result).toEqual({ deleted: 3 });
+    // One delete chain per front — per-front .eq(), never a single .in() list.
+    expect(captured.deletes).toHaveLength(2);
+    const frontsDeleted = captured.deletes.map(
+      (d) => d.eqCalls.find((c) => c.col === "front")?.val,
+    );
+    expect(frontsDeleted).toEqual(expect.arrayContaining(["Twice", "Once"]));
+  });
+
+  it("safety invariant: every delete carries .eq(user_id) AND .eq(source, manual) — AI cards are unreachable", async () => {
+    const { client, captured } = createMockSupabase({
+      deleteRowsByFront: { a: [{ id: 1 }] },
+    });
+
+    await deleteManualFlashcards(["a", "b"], USER_ID, client);
+
+    expect(captured.deletes).toHaveLength(2);
+    for (const { eqCalls } of captured.deletes) {
+      expect(eqCalls).toEqual(
+        expect.arrayContaining([
+          { col: "user_id", val: USER_ID },
+          { col: "source", val: "manual" },
+        ]),
+      );
+    }
+  });
+
+  it("deleting an absent front is a no-op contributing zero (idempotent retries)", async () => {
+    const { client, captured } = createMockSupabase({});
+
+    const result = await deleteManualFlashcards(["ghost"], USER_ID, client);
+
+    expect(result).toEqual({ deleted: 0 });
+    expect(captured.deletes).toHaveLength(1);
+  });
+
+  it("collapses intra-batch duplicate fronts to a single delete and warns", async () => {
+    const { client, captured } = createMockSupabase({
+      deleteRowsByFront: { dup: [{ id: 5 }] },
+    });
+
+    const result = await deleteManualFlashcards(["dup", "dup"], USER_ID, client);
+
+    expect(result).toEqual({ deleted: 1 });
+    expect(captured.deletes).toHaveLength(1);
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    expect(warnSpy.mock.calls[0][0]).toContain("collapsed 1");
+  });
+
+  it("rethrows when a delete errors", async () => {
+    const { client } = createMockSupabase({
+      deleteError: { message: "delete boom" },
+    });
+
+    await expect(
+      deleteManualFlashcards(["f"], USER_ID, client),
+    ).rejects.toEqual({ message: "delete boom" });
+    expect(errorSpy).toHaveBeenCalled();
+  });
+});
+
+describe("patchManualFlashcards", () => {
+  let warnSpy: ReturnType<typeof vi.spyOn>;
+  let errorSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    warnSpy.mockRestore();
+    errorSpy.mockRestore();
+  });
+
+  it("happy rename: finds the manual row, checks the target front, updates front+back in place", async () => {
+    const { client, captured } = createMockSupabase({
+      // old_front resolves to the row; new_front resolves to nothing (free).
+      existingByFront: { "Old Q": { id: 5 }, "New Q": null },
+    });
+
+    const result = await patchManualFlashcards(
+      [{ old_front: "Old Q", new_front: "New Q", new_back: "New A" }],
+      USER_ID,
+      client,
+    );
+
+    expect(result).toEqual({ patched: 1, skipped_patches: [] });
+
+    // Two lookups: the old_front lookup then the conflict check.
+    expect(captured.lookups).toHaveLength(2);
+    // Safety invariant on the row lookup: user_id AND source='manual'.
+    expect(captured.lookups[0].eqCalls).toEqual(
+      expect.arrayContaining([
+        { col: "user_id", val: USER_ID },
+        { col: "source", val: "manual" },
+        { col: "front", val: "Old Q" },
+      ]),
+    );
+    // Conflict check is source-AGNOSTIC (any source blocks the rename) and
+    // excludes the row's own id via .neq.
+    const conflictLookup = captured.lookups[1];
+    expect(conflictLookup.eqCalls).toEqual(
+      expect.arrayContaining([
+        { col: "user_id", val: USER_ID },
+        { col: "front", val: "New Q" },
+      ]),
+    );
+    expect(conflictLookup.eqCalls.map((c) => c.col)).not.toContain("source");
+    expect(conflictLookup.neqCalls).toEqual([{ col: "id", val: 5 }]);
+
+    // The update sets exactly front+back (updated_at is the DB trigger's job)
+    // and is scoped to id AND user_id AND source='manual'.
+    expect(captured.updates).toHaveLength(1);
+    expect(captured.updates[0].payload).toEqual({
+      front: "New Q",
+      back: "New A",
+    });
+    expect(captured.updates[0].eqCalls).toEqual(
+      expect.arrayContaining([
+        { col: "id", val: 5 },
+        { col: "user_id", val: USER_ID },
+        { col: "source", val: "manual" },
+      ]),
+    );
+  });
+
+  it("missing old_front → skipped with old_front_not_found, no update, patched excludes it", async () => {
+    const { client, captured } = createMockSupabase({
+      existingByFront: { ghost: null },
+    });
+
+    const result = await patchManualFlashcards(
+      [{ old_front: "ghost", new_front: "renamed", new_back: "b" }],
+      USER_ID,
+      client,
+    );
+
+    expect(result).toEqual({
+      patched: 0,
+      skipped_patches: [{ old_front: "ghost", reason: "old_front_not_found" }],
+    });
+    // Only the row lookup ran — no conflict check, no update.
+    expect(captured.lookups).toHaveLength(1);
+    expect(captured.updates).toHaveLength(0);
+  });
+
+  it("rename conflict → skipped with new_front_conflict, no update", async () => {
+    const { client, captured } = createMockSupabase({
+      // The row to patch exists, but another row already owns the target front.
+      existingByFront: { "Old Q": { id: 1 }, Taken: { id: 9 } },
+    });
+
+    const result = await patchManualFlashcards(
+      [{ old_front: "Old Q", new_front: "Taken", new_back: "b" }],
+      USER_ID,
+      client,
+    );
+
+    expect(result).toEqual({
+      patched: 0,
+      skipped_patches: [{ old_front: "Old Q", reason: "new_front_conflict" }],
+    });
+    expect(captured.updates).toHaveLength(0);
+  });
+
+  it("back-only patch (old_front === new_front) skips the conflict check and never self-collides", async () => {
+    const { client, captured } = createMockSupabase({
+      existingByFront: { Same: { id: 3 } },
+    });
+
+    const result = await patchManualFlashcards(
+      [{ old_front: "Same", new_front: "Same", new_back: "refreshed back" }],
+      USER_ID,
+      client,
+    );
+
+    expect(result).toEqual({ patched: 1, skipped_patches: [] });
+    // Exactly ONE lookup: the row lookup. A conflict check here would find the
+    // row itself and wrongly skip the patch.
+    expect(captured.lookups).toHaveLength(1);
+    expect(captured.updates).toHaveLength(1);
+    expect(captured.updates[0].payload).toEqual({
+      front: "Same",
+      back: "refreshed back",
+    });
+  });
+
+  it("collapses intra-batch duplicate old_fronts last-wins and warns", async () => {
+    const { client, captured } = createMockSupabase({
+      existingByFront: { dup: { id: 7 }, "second target": null },
+    });
+
+    const result = await patchManualFlashcards(
+      [
+        { old_front: "dup", new_front: "first target", new_back: "b1" },
+        { old_front: "dup", new_front: "second target", new_back: "b2" },
+      ],
+      USER_ID,
+      client,
+    );
+
+    expect(result).toEqual({ patched: 1, skipped_patches: [] });
+    // One patch executed, carrying the LAST occurrence's values.
+    expect(captured.updates).toHaveLength(1);
+    expect(captured.updates[0].payload).toEqual({
+      front: "second target",
+      back: "b2",
+    });
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    expect(warnSpy.mock.calls[0][0]).toContain("collapsed 1");
+  });
+
+  it("one skipped patch does not block the rest of the batch", async () => {
+    const { client, captured } = createMockSupabase({
+      existingByFront: { ghost: null, "Old Q": { id: 4 }, "New Q": null },
+    });
+
+    const result = await patchManualFlashcards(
+      [
+        { old_front: "ghost", new_front: "x", new_back: "b" },
+        { old_front: "Old Q", new_front: "New Q", new_back: "nb" },
+      ],
+      USER_ID,
+      client,
+    );
+
+    expect(result).toEqual({
+      patched: 1,
+      skipped_patches: [{ old_front: "ghost", reason: "old_front_not_found" }],
+    });
+    expect(captured.updates).toHaveLength(1);
+  });
+
+  it("rethrows when the row lookup errors", async () => {
+    const { client } = createMockSupabase({
+      lookupError: { message: "patch lookup boom" },
+    });
+
+    await expect(
+      patchManualFlashcards(
+        [{ old_front: "f", new_front: "g", new_back: "b" }],
+        USER_ID,
+        client,
+      ),
+    ).rejects.toEqual({ message: "patch lookup boom" });
+    expect(errorSpy).toHaveBeenCalled();
+  });
+
+  it("rethrows when the update errors", async () => {
+    const { client } = createMockSupabase({
+      existingByFront: { f: { id: 1 }, g: null },
+      updateError: { message: "patch update boom" },
+    });
+
+    await expect(
+      patchManualFlashcards(
+        [{ old_front: "f", new_front: "g", new_back: "b" }],
+        USER_ID,
+        client,
+      ),
+    ).rejects.toEqual({ message: "patch update boom" });
+    expect(errorSpy).toHaveBeenCalled();
+  });
+});
+
+describe("processImportRequest", () => {
+  let warnSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    warnSpy.mockRestore();
+  });
+
+  it("combined request: runs delete → patch → upsert in order and assembles all five fields", async () => {
+    const { client, captured } = createMockSupabase({
+      deleteRowsByFront: { "Del me": [{ id: 1 }] },
+      existingByFront: {
+        "Old Q": { id: 2 }, // patch target row
+        "New Q": null, // rename destination is free
+        "Fresh card": null, // upsert classifies as insert
+      },
+    });
+
+    const result = await processImportRequest(
+      {
+        cards: [{ front: "Fresh card", back: "fb" }],
+        delete_fronts: ["Del me"],
+        patches: [{ old_front: "Old Q", new_front: "New Q", new_back: "nb" }],
+      },
+      USER_ID,
+      client,
+    );
+
+    expect(result).toEqual({
+      inserted: 1,
+      updated: 0,
+      deleted: 1,
+      patched: 1,
+      skipped_patches: [],
+    });
+
+    // Smoke-script compat: literal key order pins "inserted","updated" first
+    // and adjacent (NextResponse.json preserves it; the script greps the pair).
+    expect(Object.keys(result)).toEqual([
+      "inserted",
+      "updated",
+      "deleted",
+      "patched",
+      "skipped_patches",
+    ]);
+
+    // Deterministic phase order: delete → patch (lookup×2 + update) → upsert
+    // (lookup + insert).
+    expect(captured.opOrder).toEqual([
+      "delete",
+      "lookup",
+      "lookup",
+      "update",
+      "lookup",
+      "insert",
+    ]);
+  });
+
+  it("cards-only request (legacy shape): zero counts for missing phases, no delete/patch queries", async () => {
+    const { client, captured } = createMockSupabase({
+      existingByFront: { Existing: { id: 1 } },
+    });
+
+    const result = await processImportRequest(
+      { cards: [{ front: "Existing", back: "ub" }] },
+      USER_ID,
+      client,
+    );
+
+    expect(result).toEqual({
+      inserted: 0,
+      updated: 1,
+      deleted: 0,
+      patched: 0,
+      skipped_patches: [],
+    });
+    expect(captured.deletes).toHaveLength(0);
+  });
+
+  it("delete-only request: no patch/upsert queries run", async () => {
+    const { client, captured } = createMockSupabase({
+      deleteRowsByFront: { gone: [{ id: 1 }] },
+    });
+
+    const result = await processImportRequest(
+      { delete_fronts: ["gone"] },
+      USER_ID,
+      client,
+    );
+
+    expect(result).toEqual({
+      inserted: 0,
+      updated: 0,
+      deleted: 1,
+      patched: 0,
+      skipped_patches: [],
+    });
+    expect(captured.lookups).toHaveLength(0);
+    expect(captured.inserts).toHaveLength(0);
+    expect(captured.updates).toHaveLength(0);
+  });
+
+  it("patches-only request: skipped_patches propagate to the response", async () => {
+    const { client, captured } = createMockSupabase({
+      existingByFront: { ghost: null },
+    });
+
+    const result = await processImportRequest(
+      { patches: [{ old_front: "ghost", new_front: "x", new_back: "b" }] },
+      USER_ID,
+      client,
+    );
+
+    expect(result).toEqual({
+      inserted: 0,
+      updated: 0,
+      deleted: 0,
+      patched: 0,
+      skipped_patches: [{ old_front: "ghost", reason: "old_front_not_found" }],
+    });
+    expect(captured.deletes).toHaveLength(0);
+    expect(captured.inserts).toHaveLength(0);
   });
 });

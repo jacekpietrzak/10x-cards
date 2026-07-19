@@ -137,6 +137,182 @@ describe("POST /api/import", () => {
     expect(mockedImport).not.toHaveBeenCalled();
   });
 
+  it("backward compat: legacy cards-only body → 200 five-field response with zeroed new counters", async () => {
+    mockedImport.mockResolvedValue({ ...EMPTY_RESULT, inserted: 1 });
+
+    const res = await POST(
+      makeRequest({ cards: [{ front: "f", back: "b" }] }, authHeader),
+    );
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    // Strict superset of the old { inserted, updated } contract.
+    expect(body).toEqual({
+      inserted: 1,
+      updated: 0,
+      deleted: 0,
+      patched: 0,
+      skipped_patches: [],
+    });
+    // The validated payload carries no delete_fronts/patches keys — the
+    // orchestrator sees exactly what a pre-CRUD caller sent.
+    const [payloadArg] = mockedImport.mock.calls[0];
+    expect(payloadArg).toEqual({ cards: [{ front: "f", back: "b" }] });
+  });
+
+  it("combined request: all three arrays pass through to the orchestrator, result returned verbatim", async () => {
+    const serviceResult = {
+      inserted: 1,
+      updated: 2,
+      deleted: 3,
+      patched: 1,
+      skipped_patches: [
+        { old_front: "stale", reason: "old_front_not_found" as const },
+      ],
+    };
+    mockedImport.mockResolvedValue(serviceResult);
+
+    const res = await POST(
+      makeRequest(
+        {
+          cards: [{ front: "up", back: "b" }],
+          delete_fronts: ["bye"],
+          patches: [{ old_front: "old", new_front: "new", new_back: "nb" }],
+        },
+        authHeader,
+      ),
+    );
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual(serviceResult);
+
+    const [payloadArg, userIdArg] = mockedImport.mock.calls[0];
+    expect(payloadArg).toEqual({
+      cards: [{ front: "up", back: "b" }],
+      delete_fronts: ["bye"],
+      patches: [{ old_front: "old", new_front: "new", new_back: "nb" }],
+    });
+    expect(userIdArg).toBe(USER_ID);
+  });
+
+  describe("request-level validation (superRefine)", () => {
+    it.each([
+      ["empty object {}", {}],
+      ["all arrays empty", { cards: [], delete_fronts: [], patches: [] }],
+    ])("all-empty request (%s) → 400, service not called", async (_label, body) => {
+      const res = await POST(makeRequest(body, authHeader));
+
+      expect(res.status).toBe(400);
+      const { error } = await res.json();
+      expect(JSON.stringify(error)).toContain(
+        "At least one of cards, delete_fronts, or patches must be non-empty",
+      );
+      expect(mockedImport).not.toHaveBeenCalled();
+    });
+
+    it("delete_fronts overlapping cards[].front → 400 with the disjointness message", async () => {
+      const res = await POST(
+        makeRequest(
+          {
+            cards: [{ front: "Shared", back: "b" }],
+            delete_fronts: ["Shared"],
+          },
+          authHeader,
+        ),
+      );
+
+      expect(res.status).toBe(400);
+      const { error } = await res.json();
+      expect(JSON.stringify(error)).toContain(
+        "delete_fronts must be disjoint from cards[].front",
+      );
+      expect(mockedImport).not.toHaveBeenCalled();
+    });
+
+    it("delete_fronts overlapping patches[].old_front → 400 with the disjointness message", async () => {
+      const res = await POST(
+        makeRequest(
+          {
+            patches: [{ old_front: "Shared", new_front: "n", new_back: "b" }],
+            delete_fronts: ["Shared"],
+          },
+          authHeader,
+        ),
+      );
+
+      expect(res.status).toBe(400);
+      const { error } = await res.json();
+      expect(JSON.stringify(error)).toContain(
+        "delete_fronts must be disjoint from patches[].old_front",
+      );
+      expect(mockedImport).not.toHaveBeenCalled();
+    });
+
+    it("overlap is detected post-trim (transforms run before refinements)", async () => {
+      const res = await POST(
+        makeRequest(
+          {
+            cards: [{ front: "Shared", back: "b" }],
+            delete_fronts: ["  Shared  "],
+          },
+          authHeader,
+        ),
+      );
+
+      expect(res.status).toBe(400);
+      expect(mockedImport).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      [
+        "delete_fronts",
+        { delete_fronts: Array.from({ length: 101 }, (_, i) => `f${i}`) },
+      ],
+      [
+        "patches",
+        {
+          patches: Array.from({ length: 101 }, (_, i) => ({
+            old_front: `o${i}`,
+            new_front: `n${i}`,
+            new_back: "b",
+          })),
+        },
+      ],
+    ])("%s array over the 100-entry cap → 400, service not called", async (_label, body) => {
+      const res = await POST(makeRequest(body, authHeader));
+
+      expect(res.status).toBe(400);
+      expect(mockedImport).not.toHaveBeenCalled();
+    });
+
+    it("delete-only request is valid → 200 (no longer a shimmed no-op)", async () => {
+      mockedImport.mockResolvedValue({ ...EMPTY_RESULT, deleted: 2 });
+
+      const res = await POST(
+        makeRequest({ delete_fronts: ["a", "b"] }, authHeader),
+      );
+
+      expect(res.status).toBe(200);
+      expect(await res.json()).toEqual({ ...EMPTY_RESULT, deleted: 2 });
+      const [payloadArg] = mockedImport.mock.calls[0];
+      expect(payloadArg).toEqual({ delete_fronts: ["a", "b"] });
+    });
+
+    it("patch-only request is valid → 200", async () => {
+      mockedImport.mockResolvedValue({ ...EMPTY_RESULT, patched: 1 });
+
+      const res = await POST(
+        makeRequest(
+          { patches: [{ old_front: "o", new_front: "n", new_back: "b" }] },
+          authHeader,
+        ),
+      );
+
+      expect(res.status).toBe(200);
+      expect(await res.json()).toEqual({ ...EMPTY_RESULT, patched: 1 });
+    });
+  });
+
   it("body supplies user_id at both the top level and inside a card → still uses IMPORT_USER_ID, never the body value (both Zod strip sites)", async () => {
     const res = await POST(
       makeRequest(
