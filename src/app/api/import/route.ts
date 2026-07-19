@@ -76,8 +76,11 @@ export async function POST(request: Request) {
   //    every operation to importUserId.
   try {
     const supabase = createAdminClient();
+    // Transitional (until the CRUD orchestrator lands): the schema already
+    // accepts delete_fronts/patches-only requests, but only the upsert phase
+    // runs — such requests are a 200 no-op reporting { inserted: 0, updated: 0 }.
     const response = await importFlashcards(
-      result.data.cards,
+      result.data.cards ?? [],
       importUserId,
       supabase,
     );
