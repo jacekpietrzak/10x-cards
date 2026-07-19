@@ -5,16 +5,21 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 // (covered by flashcards.service.test.ts) or a real Supabase connection.
 vi.mock("@/lib/services/flashcards.service", () => ({
   processImportRequest: vi.fn(),
+  listManualFlashcards: vi.fn(),
 }));
 vi.mock("@/utils/supabase/admin", () => ({
   createAdminClient: vi.fn(() => ({})),
 }));
 
-import { POST } from "../route";
-import { processImportRequest } from "@/lib/services/flashcards.service";
+import { GET, POST } from "../route";
+import {
+  listManualFlashcards,
+  processImportRequest,
+} from "@/lib/services/flashcards.service";
 import { createAdminClient } from "@/utils/supabase/admin";
 
 const mockedImport = vi.mocked(processImportRequest);
+const mockedList = vi.mocked(listManualFlashcards);
 const mockedAdmin = vi.mocked(createAdminClient);
 
 /** The five-field response shape, with every counter zeroed. */
@@ -385,6 +390,126 @@ describe("POST /api/import", () => {
       expect(res.status).toBe(500);
       expect(await res.json()).toEqual({
         error: "An error occurred while importing flashcards.",
+      });
+    });
+  });
+});
+
+/** The three-field read response, empty. */
+const EMPTY_LIST = { cards: [], count: 0, truncated: false };
+
+/** Build a GET request to /api/import with optional headers. */
+function makeGetRequest(headers: Record<string, string> = {}): Request {
+  return new Request("http://localhost/api/import", {
+    method: "GET",
+    headers,
+  });
+}
+
+describe("GET /api/import", () => {
+  beforeEach(() => {
+    process.env.IMPORT_API_KEY = VALID_KEY;
+    process.env.IMPORT_USER_ID = USER_ID;
+    mockedList.mockReset();
+    mockedList.mockResolvedValue({ ...EMPTY_LIST });
+    mockedAdmin.mockClear();
+  });
+
+  it("happy path: valid key → 200 with the service result verbatim, calls listManualFlashcards with (IMPORT_USER_ID, admin client)", async () => {
+    const listResult = {
+      cards: [
+        { front: "Q1", back: "A1" },
+        { front: "Q2", back: "A2" },
+      ],
+      count: 2,
+      truncated: false,
+    };
+    mockedList.mockResolvedValue(listResult);
+
+    const res = await GET(makeGetRequest(authHeader));
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual(listResult);
+
+    expect(mockedList).toHaveBeenCalledTimes(1);
+    const [userIdArg, clientArg] = mockedList.mock.calls[0];
+    expect(userIdArg).toBe(USER_ID);
+    expect(clientArg).toBe(mockedAdmin.mock.results[0].value);
+  });
+
+  it("empty DB → 200 with { cards: [], count: 0, truncated: false }, never a 4xx", async () => {
+    const res = await GET(makeGetRequest(authHeader));
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual(EMPTY_LIST);
+  });
+
+  it("missing Authorization header → 401, service not called", async () => {
+    const res = await GET(makeGetRequest());
+
+    expect(res.status).toBe(401);
+    expect(await res.json()).toEqual({ error: "Unauthorized" });
+    expect(mockedList).not.toHaveBeenCalled();
+  });
+
+  it("wrong token → 401", async () => {
+    const res = await GET(
+      makeGetRequest({ Authorization: "Bearer wrong-token" }),
+    );
+
+    expect(res.status).toBe(401);
+    expect(mockedList).not.toHaveBeenCalled();
+  });
+
+  it("non-Bearer scheme → 401", async () => {
+    const res = await GET(
+      makeGetRequest({
+        Authorization: `Basic ${Buffer.from(`u:${VALID_KEY}`).toString("base64")}`,
+      }),
+    );
+
+    expect(res.status).toBe(401);
+    expect(mockedList).not.toHaveBeenCalled();
+  });
+
+  describe("error paths", () => {
+    let errorSpy: ReturnType<typeof vi.spyOn>;
+
+    beforeEach(() => {
+      errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+      errorSpy.mockRestore();
+    });
+
+    it("IMPORT_API_KEY unset → 401 fail-closed, even with a header present", async () => {
+      delete process.env.IMPORT_API_KEY;
+
+      const res = await GET(makeGetRequest(authHeader));
+
+      expect(res.status).toBe(401);
+      expect(mockedList).not.toHaveBeenCalled();
+    });
+
+    it("IMPORT_USER_ID unset (but auth valid) → 500 server misconfiguration, service not called", async () => {
+      delete process.env.IMPORT_USER_ID;
+
+      const res = await GET(makeGetRequest(authHeader));
+
+      expect(res.status).toBe(500);
+      expect(await res.json()).toEqual({ error: "Server misconfiguration" });
+      expect(mockedList).not.toHaveBeenCalled();
+    });
+
+    it("service throws → 500 catch-all with the GET-specific message", async () => {
+      mockedList.mockRejectedValue(new Error("db unreachable"));
+
+      const res = await GET(makeGetRequest(authHeader));
+
+      expect(res.status).toBe(500);
+      expect(await res.json()).toEqual({
+        error: "An error occurred while listing flashcards.",
       });
     });
   });

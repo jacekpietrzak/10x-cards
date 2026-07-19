@@ -4,6 +4,7 @@ import type { Database } from "@/db/database.types";
 import {
   importFlashcards,
   deleteManualFlashcards,
+  listManualFlashcards,
   patchManualFlashcards,
   processImportRequest,
 } from "../flashcards.service";
@@ -35,6 +36,12 @@ interface MockOptions {
   deleteRowsByFront?: Record<string, { id: number }[]>;
   /** Force a `.delete()` chain to return an error. */
   deleteError?: { message: string } | null;
+  /** Rows an awaited list `.select()` chain returns (GET read path). */
+  listRows?: { front: string; back: string }[];
+  /** Exact match count the list chain reports (defaults to listRows.length). */
+  listCount?: number;
+  /** Force the list chain to return an error. */
+  listError?: { message: string } | null;
 }
 
 /**
@@ -71,6 +78,12 @@ function createMockSupabase(opts: MockOptions = {}) {
     inserts: [] as Record<string, unknown>[][], // rows per insert() call
     updates: [] as { payload: Record<string, unknown>; eqCalls: EqCall[] }[],
     deletes: [] as { eqCalls: EqCall[] }[],
+    // Awaited list selects (GET read path): recorded args for assertion.
+    lists: [] as {
+      selectArgs: { columns?: string; options?: Record<string, unknown> };
+      eqCalls: EqCall[];
+      limitN: number | null;
+    }[],
     opOrder: [] as string[], // terminal ops in execution order
   };
 
@@ -79,13 +92,16 @@ function createMockSupabase(opts: MockOptions = {}) {
     const neqCalls: EqCall[] = [];
     let op: "select" | "insert" | "update" | "delete" | null = null;
     let updatePayload: Record<string, unknown> = {};
+    let selectArgs: { columns?: string; options?: Record<string, unknown> } = {};
+    let limitN: number | null = null;
 
     const builder = {
-      select() {
+      select(columns?: string, options?: Record<string, unknown>) {
         // After .delete(), .select("id") only requests the deleted rows back —
         // it must not turn the chain into a lookup.
         if (op === null) {
           op = "select";
+          selectArgs = { columns, options };
         }
         return builder;
       },
@@ -111,7 +127,8 @@ function createMockSupabase(opts: MockOptions = {}) {
         neqCalls.push({ col, val });
         return builder;
       },
-      limit() {
+      limit(n: number) {
+        limitN = n;
         return builder;
       },
       maybeSingle() {
@@ -126,10 +143,14 @@ function createMockSupabase(opts: MockOptions = {}) {
       },
       // Thenable: only awaited for the insert/update/delete terminal operations.
       then(
-        onFulfilled: (value: { data?: unknown; error: unknown }) => unknown,
+        onFulfilled: (value: {
+          data?: unknown;
+          count?: unknown;
+          error: unknown;
+        }) => unknown,
         onRejected?: (reason: unknown) => unknown,
       ) {
-        let result: { data?: unknown; error: unknown };
+        let result: { data?: unknown; count?: unknown; error: unknown };
         if (op === "insert") {
           captured.opOrder.push("insert");
           result = { error: opts.insertError ?? null };
@@ -144,6 +165,19 @@ function createMockSupabase(opts: MockOptions = {}) {
           result = opts.deleteError
             ? { data: null, error: opts.deleteError }
             : { data: deleteRowsByFront[front] ?? [], error: null };
+        } else if (op === "select") {
+          // Awaited list chain (GET read path); lookups instead resolve via
+          // the explicit .maybeSingle() and never reach here.
+          captured.lists.push({ selectArgs, eqCalls: [...eqCalls], limitN });
+          captured.opOrder.push("list");
+          const listRows = opts.listRows ?? [];
+          result = opts.listError
+            ? { data: null, count: null, error: opts.listError }
+            : {
+                data: listRows,
+                count: opts.listCount ?? listRows.length,
+                error: null,
+              };
         } else {
           result = { error: null };
         }
@@ -754,5 +788,89 @@ describe("processImportRequest", () => {
     });
     expect(captured.deletes).toHaveLength(0);
     expect(captured.inserts).toHaveLength(0);
+  });
+});
+
+describe("listManualFlashcards", () => {
+  let errorSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    errorSpy.mockRestore();
+  });
+
+  it("selects only front/back with an exact count, scoped to user_id AND source='manual', capped at 500", async () => {
+    const rows = [
+      { front: "Q1", back: "A1" },
+      { front: "Q2", back: "A2" },
+    ];
+    const { client, captured } = createMockSupabase({ listRows: rows });
+
+    const result = await listManualFlashcards(USER_ID, client);
+
+    expect(captured.fromTables).toEqual(["flashcards"]);
+    expect(captured.lists).toHaveLength(1);
+    const list = captured.lists[0];
+    // The projection is the whole contract: no ids, FSRS state, or timestamps.
+    expect(list.selectArgs.columns).toBe("front, back");
+    expect(list.selectArgs.options).toEqual({ count: "exact" });
+    // Safety invariant: both scoping filters present.
+    expect(list.eqCalls).toEqual([
+      { col: "user_id", val: USER_ID },
+      { col: "source", val: "manual" },
+    ]);
+    expect(list.limitN).toBe(500);
+
+    expect(result).toEqual({ cards: rows, count: 2, truncated: false });
+  });
+
+  it("empty table → { cards: [], count: 0, truncated: false }, never an error", async () => {
+    const { client } = createMockSupabase({ listRows: [] });
+
+    const result = await listManualFlashcards(USER_ID, client);
+
+    expect(result).toEqual({ cards: [], count: 0, truncated: false });
+  });
+
+  it("more than 500 matching rows → truncated: true, count reflects returned rows only", async () => {
+    // The DB enforces the limit; the mock hands back exactly 500 rows while
+    // the exact match count says 613 exist.
+    const rows = Array.from({ length: 500 }, (_, i) => ({
+      front: `Q${i}`,
+      back: `A${i}`,
+    }));
+    const { client } = createMockSupabase({ listRows: rows, listCount: 613 });
+
+    const result = await listManualFlashcards(USER_ID, client);
+
+    expect(result.truncated).toBe(true);
+    expect(result.count).toBe(500);
+    expect(result.cards).toHaveLength(500);
+  });
+
+  it("exactly 500 matching rows → truncated: false (cap not exceeded)", async () => {
+    const rows = Array.from({ length: 500 }, (_, i) => ({
+      front: `Q${i}`,
+      back: `A${i}`,
+    }));
+    const { client } = createMockSupabase({ listRows: rows, listCount: 500 });
+
+    const result = await listManualFlashcards(USER_ID, client);
+
+    expect(result).toEqual({ cards: rows, count: 500, truncated: false });
+  });
+
+  it("DB error → logs and throws (the route translates to 500)", async () => {
+    const { client } = createMockSupabase({
+      listError: { message: "connection refused" },
+    });
+
+    await expect(listManualFlashcards(USER_ID, client)).rejects.toThrow(
+      "connection refused",
+    );
+    expect(errorSpy).toHaveBeenCalled();
   });
 });

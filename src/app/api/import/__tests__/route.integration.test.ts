@@ -19,7 +19,7 @@ vi.mock("@/utils/supabase/admin", () => ({
   createAdminClient: () => state.client,
 }));
 
-import { POST } from "../route";
+import { GET, POST } from "../route";
 
 interface Row {
   id: number;
@@ -56,11 +56,15 @@ function createInMemoryDb(seed: Omit<Row, "id">[]) {
     let op: "select" | "insert" | "update" | "delete" | null = null;
     let payload: unknown = null;
     let limitN = Infinity;
+    let selectColumns: string | null = null;
+    let wantCount = false;
 
     const builder = {
-      select() {
+      select(columns?: string, options?: { count?: string }) {
         if (op === null) {
           op = "select";
+          selectColumns = columns ?? null;
+          wantCount = options?.count === "exact";
         }
         return builder;
       },
@@ -100,10 +104,14 @@ function createInMemoryDb(seed: Omit<Row, "id">[]) {
         });
       },
       then(
-        onFulfilled: (value: { data?: unknown; error: unknown }) => unknown,
+        onFulfilled: (value: {
+          data?: unknown;
+          count?: unknown;
+          error: unknown;
+        }) => unknown,
         onRejected?: (reason: unknown) => unknown,
       ) {
-        let result: { data?: unknown; error: unknown };
+        let result: { data?: unknown; count?: unknown; error: unknown };
         if (op === "insert") {
           for (const row of payload as Omit<Row, "id">[]) {
             rows.push({ ...row, id: nextId++ } as Row);
@@ -122,6 +130,25 @@ function createInMemoryDb(seed: Omit<Row, "id">[]) {
             rows.splice(rows.indexOf(row), 1);
           }
           result = { data: removed.map(({ id }) => ({ id })), error: null };
+        } else if (op === "select") {
+          // Awaited list select (the GET read path): apply the recorded
+          // filters, project the requested columns, slice to the limit, and —
+          // when `{ count: "exact" }` was asked for — report the pre-limit
+          // match count, mirroring PostgREST.
+          const matched = rows.filter((row) => matches(row, eqs, neqs));
+          const cols = selectColumns
+            ? selectColumns.split(",").map((c) => c.trim())
+            : null;
+          const data = matched.slice(0, limitN).map((row) =>
+            cols
+              ? Object.fromEntries(cols.map((c) => [c, row[c]]))
+              : { ...row },
+          );
+          result = {
+            data,
+            count: wantCount ? matched.length : null,
+            error: null,
+          };
         } else {
           result = { data: null, error: null };
         }
@@ -371,6 +398,109 @@ describe("POST /api/import (integration: real route + real orchestrator)", () =>
     expect(fronts).toEqual(["Brand new", "Renamed", "Update me"]);
     expect(db.rows.find((r) => r.front === "Update me")).toMatchObject({
       back: "fresh back",
+    });
+  });
+});
+
+function makeGetRequest(headers?: Record<string, string>): Request {
+  return new Request("http://localhost/api/import", {
+    method: "GET",
+    headers: headers ?? { Authorization: `Bearer ${VALID_KEY}` },
+  });
+}
+
+describe("GET /api/import (integration: real route + real service)", () => {
+  beforeEach(() => {
+    process.env.IMPORT_API_KEY = VALID_KEY;
+    process.env.IMPORT_USER_ID = USER_ID;
+  });
+
+  it("returns only the import user's manual cards — ai-full/ai-edited and other-user rows are invisible", async () => {
+    const db = createInMemoryDb([
+      manualRow("Q1", "A1"),
+      { user_id: USER_ID, front: "AI Q", back: "AI A", source: "ai-full" },
+      { user_id: USER_ID, front: "AI Q2", back: "AI A2", source: "ai-edited" },
+      { user_id: "someone-else", front: "Other Q", back: "Other A", source: "manual" },
+      manualRow("Q2", "A2"),
+    ]);
+    state.client = db.client;
+
+    const res = await GET(makeGetRequest());
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    // Exact three-field shape, cards in DB order, front/back only — no ids,
+    // source, FSRS state, or timestamps leak through.
+    expect(body).toEqual({
+      cards: [
+        { front: "Q1", back: "A1" },
+        { front: "Q2", back: "A2" },
+      ],
+      count: 2,
+      truncated: false,
+    });
+    expect(Object.keys(body)).toEqual(["cards", "count", "truncated"]);
+  });
+
+  it("empty table → 200 { cards: [], count: 0, truncated: false }", async () => {
+    const db = createInMemoryDb([]);
+    state.client = db.client;
+
+    const res = await GET(makeGetRequest());
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({
+      cards: [],
+      count: 0,
+      truncated: false,
+    });
+  });
+
+  it("more than 500 manual rows → first 500 returned with truncated: true", async () => {
+    const db = createInMemoryDb(
+      Array.from({ length: 505 }, (_, i) => manualRow(`Q${i}`, `A${i}`)),
+    );
+    state.client = db.client;
+
+    const res = await GET(makeGetRequest());
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.cards).toHaveLength(500);
+    expect(body.count).toBe(500);
+    expect(body.truncated).toBe(true);
+    // The cap returns the FIRST 500 in DB order.
+    expect(body.cards[0]).toEqual({ front: "Q0", back: "A0" });
+    expect(body.cards[499]).toEqual({ front: "Q499", back: "A499" });
+  });
+
+  it("missing bearer → 401 without touching the DB", async () => {
+    const db = createInMemoryDb([manualRow("Q1", "A1")]);
+    state.client = db.client;
+
+    const res = await GET(makeGetRequest({}));
+
+    expect(res.status).toBe(401);
+    expect(await res.json()).toEqual({ error: "Unauthorized" });
+  });
+
+  it("read-after-write: cards pushed via POST are immediately visible via GET", async () => {
+    const db = createInMemoryDb([manualRow("Old", "gone soon")]);
+    state.client = db.client;
+
+    const postRes = await POST(
+      makeRequest({
+        cards: [{ front: "New", back: "fresh" }],
+        delete_fronts: ["Old"],
+      }),
+    );
+    expect(postRes.status).toBe(200);
+
+    const res = await GET(makeGetRequest());
+    expect(await res.json()).toEqual({
+      cards: [{ front: "New", back: "fresh" }],
+      count: 1,
+      truncated: false,
     });
   });
 });
