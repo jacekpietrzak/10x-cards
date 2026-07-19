@@ -1,12 +1,17 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { importRequestSchema } from "@/lib/schemas/import";
-import { importFlashcards } from "@/lib/services/flashcards.service";
+import { processImportRequest } from "@/lib/services/flashcards.service";
 import { createAdminClient } from "@/utils/supabase/admin";
 
 // node:crypto (constant-time compare) and the service-role client both require
 // the Node.js runtime, not the Edge runtime.
 export const runtime = "nodejs";
+
+// The patch phase runs sequentially (~2 round trips per patch), so a request at
+// the 100-patch cap can outlast the default timeout. Realistic diffs are a few
+// ops; this ceiling only exists so the cap cannot 504.
+export const maxDuration = 60;
 
 /**
  * Constant-time comparison of two secrets.
@@ -26,15 +31,35 @@ function secretsMatch(provided: string, expected: string): boolean {
 /**
  * POST /api/import
  *
- * Machine-to-machine flashcard import for an external personal-knowledge tool.
+ * Machine-to-machine flashcard CRUD for an external personal-knowledge tool.
  * Authenticated by a static bearer token (`Authorization: Bearer <IMPORT_API_KEY>`);
  * all rows are written for the single configured `IMPORT_USER_ID` via a
  * service-role client that bypasses RLS, so `user_id` is never read from the
- * request body. Cards are upserted on `(user_id, front)` by `importFlashcards`.
+ * request body.
  *
- * Responses: 200 `{ inserted, updated }` | 400 `{ error }` | 401 `{ error }` |
- * 500 `{ error }`. Deliberately no 503 — the bearer token is the only gate
- * (no feature-flag check), so the contract stays stable for the external tool.
+ * Request body — three optional arrays (max 100 each), at least one non-empty:
+ * - `cards: [{ front, back }]` — upserted on `(user_id, front)`.
+ * - `delete_fronts: [front]` — deleted by front.
+ * - `patches: [{ old_front, new_front, new_back }]` — renamed in place, keeping
+ *   the row id and all FSRS state.
+ *
+ * Processing order is deterministic and best-effort: **deletes → patches →
+ * upserts**, with no enclosing transaction (see plan Decision 3). Every phase is
+ * idempotent, so a caller recovers from a 500 by re-sending the same diff.
+ *
+ * Safety invariant: delete and patch only ever touch `source='manual'` rows —
+ * enforced server-side in every query. AI-generated cards (`ai-full`,
+ * `ai-edited`) are unreachable through those operations. The upsert path keeps
+ * its pre-existing source-agnostic behavior for backward compatibility.
+ *
+ * Responses: 200 `{ inserted, updated, deleted, patched, skipped_patches }` —
+ * all five fields always present, a strict superset of the old
+ * `{ inserted, updated }`. Errors: 400 `{ error }` (malformed JSON, or Zod —
+ * including the all-empty request and the `delete_fronts` overlap guards),
+ * 401 `{ error }` (auth), 500 `{ error }` (misconfiguration, or a DB error —
+ * partial writes are possible, and retrying the same body is safe).
+ * Deliberately no 503 — the bearer token is the only gate (no feature-flag
+ * check), so the contract stays stable for the external tool.
  */
 export async function POST(request: Request) {
   // 1. Auth — fail closed. A missing IMPORT_API_KEY rejects everything.
@@ -72,15 +97,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: result.error.issues }, { status: 400 });
   }
 
-  // 4. Write. Service-role client bypasses RLS; importFlashcards hard-scopes
-  //    every operation to importUserId.
+  // 4. Write. Service-role client bypasses RLS; processImportRequest hard-scopes
+  //    every operation to importUserId, and delete/patch additionally to
+  //    source='manual'.
   try {
     const supabase = createAdminClient();
-    // Transitional (until the CRUD orchestrator lands): the schema already
-    // accepts delete_fronts/patches-only requests, but only the upsert phase
-    // runs — such requests are a 200 no-op reporting { inserted: 0, updated: 0 }.
-    const response = await importFlashcards(
-      result.data.cards ?? [],
+    const response = await processImportRequest(
+      result.data,
       importUserId,
       supabase,
     );

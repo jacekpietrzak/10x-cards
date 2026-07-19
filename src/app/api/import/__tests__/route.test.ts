@@ -1,21 +1,30 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 // Mock the service and the admin client so these tests exercise only the route
-// handler's auth / config / validation / wiring — not the upsert logic (covered
-// by flashcards.service.test.ts) or a real Supabase connection.
+// handler's auth / config / validation / wiring — not the CRUD phase logic
+// (covered by flashcards.service.test.ts) or a real Supabase connection.
 vi.mock("@/lib/services/flashcards.service", () => ({
-  importFlashcards: vi.fn(),
+  processImportRequest: vi.fn(),
 }));
 vi.mock("@/utils/supabase/admin", () => ({
   createAdminClient: vi.fn(() => ({})),
 }));
 
 import { POST } from "../route";
-import { importFlashcards } from "@/lib/services/flashcards.service";
+import { processImportRequest } from "@/lib/services/flashcards.service";
 import { createAdminClient } from "@/utils/supabase/admin";
 
-const mockedImport = vi.mocked(importFlashcards);
+const mockedImport = vi.mocked(processImportRequest);
 const mockedAdmin = vi.mocked(createAdminClient);
+
+/** The five-field response shape, with every counter zeroed. */
+const EMPTY_RESULT = {
+  inserted: 0,
+  updated: 0,
+  deleted: 0,
+  patched: 0,
+  skipped_patches: [],
+};
 
 const VALID_KEY = "test-secret-key-with-plenty-of-entropy";
 const USER_ID = "import-user-uuid-123";
@@ -41,12 +50,16 @@ describe("POST /api/import", () => {
     process.env.IMPORT_API_KEY = VALID_KEY;
     process.env.IMPORT_USER_ID = USER_ID;
     mockedImport.mockReset();
-    mockedImport.mockResolvedValue({ inserted: 0, updated: 0 });
+    mockedImport.mockResolvedValue({ ...EMPTY_RESULT });
     mockedAdmin.mockClear();
   });
 
-  it("happy path: valid key + valid cards → 200 with the service result, calls importFlashcards with (cards, IMPORT_USER_ID)", async () => {
-    mockedImport.mockResolvedValue({ inserted: 2, updated: 1 });
+  it("happy path: valid key + valid cards → 200 with the service result, calls processImportRequest with (payload, IMPORT_USER_ID)", async () => {
+    mockedImport.mockResolvedValue({
+      ...EMPTY_RESULT,
+      inserted: 2,
+      updated: 1,
+    });
 
     const res = await POST(
       makeRequest(
@@ -56,14 +69,23 @@ describe("POST /api/import", () => {
     );
 
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ inserted: 2, updated: 1 });
+    // The five-field response is passed through verbatim.
+    expect(await res.json()).toEqual({
+      ...EMPTY_RESULT,
+      inserted: 2,
+      updated: 1,
+    });
 
     expect(mockedImport).toHaveBeenCalledTimes(1);
-    const [cardsArg, userIdArg, clientArg] = mockedImport.mock.calls[0];
-    expect(cardsArg).toEqual([
-      { front: "Q1", back: "A1" },
-      { front: "Q2", back: "A2" },
-    ]);
+    // The route hands the whole validated payload to the orchestrator, which
+    // owns the delete → patch → upsert phase order.
+    const [payloadArg, userIdArg, clientArg] = mockedImport.mock.calls[0];
+    expect(payloadArg).toEqual({
+      cards: [
+        { front: "Q1", back: "A1" },
+        { front: "Q2", back: "A2" },
+      ],
+    });
     expect(userIdArg).toBe(USER_ID);
     // The service-role client (mocked) is passed through.
     expect(clientArg).toBeDefined();
@@ -129,13 +151,15 @@ describe("POST /api/import", () => {
     expect(res.status).toBe(200);
     expect(mockedImport).toHaveBeenCalledTimes(1);
 
-    const [cardsArg, userIdArg] = mockedImport.mock.calls[0];
-    // Top-level strip: the user id passed to the service is the env value.
+    const [payloadArg, userIdArg] = mockedImport.mock.calls[0];
+    // Top-level strip: the user id passed to the service is the env value, and
+    // the payload the orchestrator receives carries no user_id of its own.
     expect(userIdArg).toBe(USER_ID);
     expect(userIdArg).not.toBe("evil-top-level");
+    expect(payloadArg).not.toHaveProperty("user_id");
     // Card-level strip: the card object carries only front/back, no user_id.
-    expect(cardsArg).toEqual([{ front: "f", back: "b" }]);
-    expect(cardsArg[0]).not.toHaveProperty("user_id");
+    expect(payloadArg.cards).toEqual([{ front: "f", back: "b" }]);
+    expect(payloadArg.cards?.[0]).not.toHaveProperty("user_id");
   });
 
   describe("error paths", () => {
