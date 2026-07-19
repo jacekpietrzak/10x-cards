@@ -8,6 +8,7 @@ import type {
   FlashcardUpdateDto,
 } from "@/lib/types";
 import type { FlashcardsQueryParams } from "@/lib/schemas/flashcards";
+import type { ImportPatch, ImportRequest } from "@/lib/schemas/import";
 
 export async function createFlashcards(
   command: FlashcardsCreateCommand,
@@ -485,4 +486,254 @@ export async function importFlashcards(
 
   // 6. Exact counts.
   return { inserted: toInsert.length, updated: toUpdate.length };
+}
+
+/** Why a patch was skipped rather than applied (see patchManualFlashcards). */
+export interface ImportSkippedPatch {
+  old_front: string;
+  reason: "old_front_not_found" | "new_front_conflict";
+}
+
+/**
+ * Deletes manual flashcards by front for the import user (POST /api/import).
+ *
+ * Hard safety invariant: every delete carries both `.eq("user_id", …)` and
+ * `.eq("source", "manual")` — AI-generated cards (`ai-full`, `ai-edited`) are
+ * unreachable even if their front matches, and the service-role client's RLS
+ * bypass is contained to the single import user. Deletes run per-front with
+ * `.eq("front", …)` (never `.in()`, which does not escape embedded quotes),
+ * parallelized like the import lookups.
+ *
+ * With no `UNIQUE(user_id, front)` constraint, a front may match several manual
+ * rows; delete removes **all** of them (unlike patch, which updates one). The
+ * exact `deleted` count comes from the returned rows. Deleting an absent front
+ * is a no-op, so re-sending the same diff after a partial failure converges.
+ *
+ * @param fronts - Trimmed fronts to delete (deduped here; schema pre-trims).
+ * @param userId - The single import user; the tenant scope for every operation.
+ * @param supabase - A service-role Supabase client.
+ *
+ * @returns Exact count of rows deleted across all fronts.
+ * @throws Rethrows any Supabase error (the route translates it to 500).
+ */
+export async function deleteManualFlashcards(
+  fronts: string[],
+  userId: string,
+  supabase: SupabaseClient<Database>,
+): Promise<{ deleted: number }> {
+  const unique = Array.from(new Set(fronts));
+
+  const collapsed = fronts.length - unique.length;
+  if (collapsed > 0) {
+    console.warn(
+      `deleteManualFlashcards: collapsed ${collapsed} intra-batch duplicate front(s)`,
+    );
+  }
+
+  const counts = await Promise.all(
+    unique.map(async (front) => {
+      const { data, error } = await supabase
+        .from("flashcards")
+        .delete()
+        .eq("user_id", userId)
+        .eq("source", "manual")
+        .eq("front", front)
+        .select("id");
+
+      if (error) {
+        console.error("Error deleting flashcard during import:", error);
+        throw error;
+      }
+
+      return data?.length ?? 0;
+    }),
+  );
+
+  return { deleted: counts.reduce((sum, count) => sum + count, 0) };
+}
+
+/**
+ * Renames/edits manual flashcards in place for the import user (POST /api/import).
+ *
+ * Each patch looks up its `old_front`, checks the target `new_front` for a
+ * conflict, then updates `front`/`back` on the found row — preserving the row
+ * id and all FSRS state. `updated_at` refreshes via the DB trigger; never set
+ * it manually. The same safety invariant as deleteManualFlashcards applies:
+ * lookup and update are scoped `.eq("user_id", …).eq("source", "manual")`, so
+ * AI-generated cards are unreachable.
+ *
+ * Skips are reported, not thrown, so one stale diff entry never blocks the
+ * rest of the request and retries converge:
+ * - no manual row matches `old_front` → `reason: "old_front_not_found"`;
+ * - another row (any source) already has `new_front` → `reason:
+ *   "new_front_conflict"` — `(user_id, front)` is the import pipeline's dedup
+ *   key regardless of source, and merging would destroy FSRS state. A back-only
+ *   patch (`old_front === new_front`) skips the conflict check entirely, so it
+ *   never self-collides.
+ *
+ * Patches run **sequentially**: patches can chain (A→B while B→C) and two
+ * patches can target the same `new_front`, so parallel execution would race
+ * the conflict checks. Lookups use `.limit(1).maybeSingle()` — with no unique
+ * constraint on `(user_id, front)`, bare `.maybeSingle()` throws on duplicate
+ * fronts. A duplicate-front patch therefore updates only the single row the
+ * lookup found (unlike delete, which removes all matches) — accepted asymmetry
+ * for the single-writer manual namespace.
+ *
+ * @param patches - Validated patches (deduped here by `old_front`, last wins).
+ * @param userId - The single import user; the tenant scope for every operation.
+ * @param supabase - A service-role Supabase client.
+ *
+ * @returns Count of applied patches plus per-patch skip reasons.
+ * @throws Rethrows any Supabase error (the route translates it to 500).
+ */
+export async function patchManualFlashcards(
+  patches: ImportPatch[],
+  userId: string,
+  supabase: SupabaseClient<Database>,
+): Promise<{ patched: number; skipped_patches: ImportSkippedPatch[] }> {
+  // Dedup intra-batch by old_front, last-occurrence-wins, mirroring importFlashcards.
+  const deduped = new Map<string, ImportPatch>();
+  for (const patch of patches) {
+    deduped.set(patch.old_front, patch);
+  }
+
+  const collapsed = patches.length - deduped.size;
+  if (collapsed > 0) {
+    console.warn(
+      `patchManualFlashcards: collapsed ${collapsed} intra-batch duplicate old_front(s) (last occurrence wins)`,
+    );
+  }
+
+  let patched = 0;
+  const skipped_patches: ImportSkippedPatch[] = [];
+
+  for (const { old_front, new_front, new_back } of deduped.values()) {
+    // 1. Find the manual row to patch.
+    const { data: existing, error: lookupError } = await supabase
+      .from("flashcards")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("source", "manual")
+      .eq("front", old_front)
+      .limit(1)
+      .maybeSingle();
+
+    if (lookupError) {
+      console.error("Error looking up flashcard during import patch:", lookupError);
+      throw lookupError;
+    }
+
+    if (!existing) {
+      skipped_patches.push({ old_front, reason: "old_front_not_found" });
+      continue;
+    }
+
+    // 2. Conflict check (any source), skipped for back-only patches.
+    if (old_front !== new_front) {
+      const { data: conflict, error: conflictError } = await supabase
+        .from("flashcards")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("front", new_front)
+        .neq("id", existing.id)
+        .limit(1)
+        .maybeSingle();
+
+      if (conflictError) {
+        console.error(
+          "Error checking rename conflict during import patch:",
+          conflictError,
+        );
+        throw conflictError;
+      }
+
+      if (conflict) {
+        skipped_patches.push({ old_front, reason: "new_front_conflict" });
+        continue;
+      }
+    }
+
+    // 3. Apply. Do not set updated_at (DB trigger handles it).
+    const { error: updateError } = await supabase
+      .from("flashcards")
+      .update({ front: new_front, back: new_back })
+      .eq("id", existing.id)
+      .eq("user_id", userId)
+      .eq("source", "manual");
+
+    if (updateError) {
+      // Log the row id (non-sensitive DB integer), not card content.
+      console.error(
+        `Error updating flashcard during import patch (id=${existing.id}):`,
+        updateError,
+      );
+      throw updateError;
+    }
+
+    patched += 1;
+  }
+
+  return { patched, skipped_patches };
+}
+
+/**
+ * Orchestrates a full POST /api/import request: deletes → patches → cards
+ * upsert, in that deterministic order, best-effort (no transaction —
+ * supabase-js/PostgREST has no multi-statement transactions). Every phase is
+ * idempotent, so the caller's recovery from a mid-request 500 with partial
+ * writes is to re-send the same diff.
+ *
+ * Missing phases contribute zero counts; all five response fields are always
+ * present. `inserted` and `updated` stay first and adjacent in the return
+ * literal — the pre-Step-5 smoke script greps for the exact substring
+ * `"inserted":N,"updated":M` and NextResponse.json preserves literal key order.
+ *
+ * @param payload - The validated import request (any subset of the three arrays).
+ * @param userId - The single import user; the tenant scope for every operation.
+ * @param supabase - A service-role Supabase client.
+ *
+ * @returns The five-field import response.
+ * @throws Rethrows any Supabase error from a phase (the route translates it to 500).
+ */
+export async function processImportRequest(
+  payload: ImportRequest,
+  userId: string,
+  supabase: SupabaseClient<Database>,
+): Promise<{
+  inserted: number;
+  updated: number;
+  deleted: number;
+  patched: number;
+  skipped_patches: ImportSkippedPatch[];
+}> {
+  let deleted = 0;
+  if (payload.delete_fronts?.length) {
+    ({ deleted } = await deleteManualFlashcards(
+      payload.delete_fronts,
+      userId,
+      supabase,
+    ));
+  }
+
+  let patched = 0;
+  let skipped_patches: ImportSkippedPatch[] = [];
+  if (payload.patches?.length) {
+    ({ patched, skipped_patches } = await patchManualFlashcards(
+      payload.patches,
+      userId,
+      supabase,
+    ));
+  }
+
+  let inserted = 0;
+  let updated = 0;
+  if (payload.cards?.length) {
+    ({ inserted, updated } = await importFlashcards(
+      payload.cards,
+      userId,
+      supabase,
+    ));
+  }
+
+  return { inserted, updated, deleted, patched, skipped_patches };
 }
